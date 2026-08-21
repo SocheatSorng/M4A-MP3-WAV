@@ -151,7 +151,7 @@
     <section class="metrics" aria-label="Audio summary">
       <div class="metric"><span class="metric-label">Total duration</span><strong id="total" class="metric-value">00:00:00</strong></div>
       <div class="metric"><span class="metric-label">Successful WAV files</span><strong id="file-count" class="metric-value">0</strong></div>
-      <div class="metric"><span class="metric-label">Unsuccessful WAV files</span><strong id="failed-count" class="metric-value">0</strong></div>
+      <div class="metric"><span class="metric-label">Unsuccessful files</span><strong id="failed-count" class="metric-value">0</strong></div>
       <div class="metric"><span class="metric-label">Average</span><strong id="average" class="metric-value">00:00</strong></div>
       <div class="metric"><span class="metric-label">Longest file</span><strong id="longest" class="metric-value">00:00</strong></div>
       <div class="metric"><span class="metric-label">Total size</span><strong id="total-size" class="metric-value">0 B</strong></div>
@@ -256,6 +256,7 @@
       const totalSeconds = snapshot.totalSeconds || 0;
       const totalSize = snapshot.totalSize ?? scannedResults.reduce((sum, item) => sum + (item.size || 0), 0);
       const successes = scannedResults.filter(item => Number.isFinite(item.seconds)).length;
+      const failedCount = snapshot.failedCount ?? scannedResults.filter(item => !Number.isFinite(item.seconds)).length + (snapshot.nonWavFiles || []).length;
       const fileCount = snapshot.fileCount || scannedResults.length;
       const nonWavFiles = snapshot.nonWavFiles || [];
       rows.replaceChildren();
@@ -280,7 +281,7 @@
       results.hidden = successes === 0;
       progressWrap.style.display = successes ? 'block' : 'none';
       progress.style.width = '100%';
-      updateSummary(totalSeconds, successes, fileCount - successes, snapshot.longestSeconds || 0, totalSize);
+      updateSummary(totalSeconds, successes, failedCount, snapshot.longestSeconds || 0, totalSize);
       renderNonWavFiles(nonWavFiles);
       if (successes) appendTotalRow(totalSeconds);
       status.textContent = `Restored ${successes} readable WAV result${successes === 1 ? '' : 's'} from this browser.`;
@@ -335,6 +336,7 @@
       let totalSize = wavFiles.reduce((sum, file) => sum + file.size, 0);
       let completed = 0;
       let successes = 0;
+      let failedWavCount = 0;
       let longest = { seconds: 0, name: '' };
       status.textContent = `Reading ${wavFiles.length} WAV file${wavFiles.length === 1 ? '' : 's'}...`;
 
@@ -364,19 +366,19 @@
         } catch (error) {
           durationCell.textContent = 'Could not read';
           durationCell.className = 'error';
+          failedWavCount++;
           scannedResults.push({ code: file.name, size: file.size, seconds: null, minutes: null, by: '', location: getFolder(file.webkitRelativePath) || selectedFolderName });
         }
         completed++;
         progress.style.width = `${Math.round(completed / wavFiles.length * 100)}%`;
-        updateSummary(totalSeconds, successes, completed - successes, longest.seconds, totalSize);
+        updateSummary(totalSeconds, successes, failedWavCount + nonWavFiles.length, longest.seconds, totalSize);
       }
 
-      const failed = wavFiles.length - successes;
       if (scannedResults.length) appendTotalRow(totalSeconds);
-      status.textContent = failed ? `Finished with ${failed} unreadable file${failed === 1 ? '' : 's'}.` : 'Scan complete. All WAV files were read locally.';
+      status.textContent = failedWavCount ? `Finished with ${failedWavCount} unreadable file${failedWavCount === 1 ? '' : 's'}.` : 'Scan complete. All WAV files were read locally.';
       resultCount.textContent = `${successes} readable of ${wavFiles.length} WAV file${wavFiles.length === 1 ? '' : 's'}`;
       exportButton.disabled = scannedResults.length === 0;
-      await saveDurationLedger({ results: scannedResults, totalSeconds, totalSize, longestSeconds: longest.seconds, fileCount: wavFiles.length, nonWavFiles, folderName: selectedFolderName });
+      await saveDurationLedger({ results: scannedResults, totalSeconds, totalSize, longestSeconds: longest.seconds, fileCount: wavFiles.length, failedCount: failedWavCount + nonWavFiles.length, nonWavFiles, folderName: selectedFolderName });
     }
 
     function exportCsv() {
