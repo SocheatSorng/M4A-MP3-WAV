@@ -243,7 +243,8 @@ async function downloadAll() {
     const zipUrl = URL.createObjectURL(zipBlob);
     const link = document.createElement('a');
     link.href = zipUrl;
-    const timestamp = new Date().toISOString().replace('T', '_').replace(/:/g, '-').replace(/\.\d{3}Z$/, '');
+    const utcPlusSeven = new Date(Date.now() + 7 * 60 * 60 * 1000);
+    const timestamp = utcPlusSeven.toISOString().replace('T', '_').replace(/:/g, '-').replace(/\.\d{3}Z$/, '');
     link.download = `wav-converted-${timestamp}.zip`;
     link.click();
     setTimeout(() => URL.revokeObjectURL(zipUrl), 1000);
