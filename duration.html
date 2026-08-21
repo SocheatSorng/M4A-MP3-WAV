@@ -229,7 +229,7 @@
     function renderStoredLedger(snapshot) {
       scannedResults = snapshot.results || [];
       const totalSeconds = snapshot.totalSeconds || 0;
-      const successes = scannedResults.length;
+      const successes = scannedResults.filter(item => Number.isFinite(item.seconds)).length;
       rows.replaceChildren();
       scannedResults.forEach(item => {
         const row = document.createElement('tr');
@@ -243,7 +243,8 @@
         path.textContent = item.location || 'Selected folder';
         nameCell.append(name, path);
         const durationCell = document.createElement('td');
-        durationCell.textContent = formatDuration(item.seconds);
+        durationCell.textContent = Number.isFinite(item.seconds) ? formatDuration(item.seconds) : 'Could not read';
+        if (!Number.isFinite(item.seconds)) durationCell.className = 'error';
         row.append(nameCell, durationCell);
         rows.append(row);
       });
@@ -255,7 +256,7 @@
       if (successes) appendTotalRow(totalSeconds);
       status.textContent = `Restored ${successes} readable WAV result${successes === 1 ? '' : 's'} from this browser.`;
       resultCount.textContent = `${successes} readable of ${snapshot.fileCount || successes} WAV file${(snapshot.fileCount || successes) === 1 ? '' : 's'}`;
-      exportButton.disabled = successes === 0;
+      exportButton.disabled = scannedResults.length === 0;
     }
 
     folderInput.addEventListener('change', () => scanFiles([...folderInput.files]));
@@ -314,6 +315,7 @@
         } catch (error) {
           durationCell.textContent = 'Could not read';
           durationCell.className = 'error';
+          scannedResults.push({ code: file.name, seconds: null, minutes: null, by: '', location: getFolder(file.webkitRelativePath) });
         }
         completed++;
         progress.style.width = `${Math.round(completed / wavFiles.length * 100)}%`;
@@ -330,9 +332,10 @@
 
     function exportCsv() {
       if (!scannedResults.length) return;
-      const totalSeconds = scannedResults.reduce((sum, item) => sum + item.seconds, 0);
-      const headers = ['No.', 'Code', 'RT (Second)', 'RT (Minute)', 'RT (Hour)', 'By'];
-      const lines = [headers, ...scannedResults.map((item, index) => [index + 1, item.code, item.seconds.toFixed(3), item.minutes.toFixed(3), formatDecimalHours(item.seconds), item.by]), ['', 'TOTAL DURATION', totalSeconds.toFixed(3), (totalSeconds / 60).toFixed(3), formatDecimalHours(totalSeconds), ''], ['', 'ESTIMATED DURATION', Math.round(totalSeconds), formatMinuteDuration(totalSeconds), formatHourDuration(totalSeconds), '']];
+      const readableResults = scannedResults.filter(item => Number.isFinite(item.seconds));
+      const totalSeconds = readableResults.reduce((sum, item) => sum + item.seconds, 0);
+      const headers = ['No.', 'Code', 'Location', 'RT (Second)', 'RT (Minute)', 'RT (Hour)', 'By'];
+      const lines = [headers, ...scannedResults.map((item, index) => [index + 1, item.code, item.location || 'Selected folder', Number.isFinite(item.seconds) ? item.seconds.toFixed(3) : 'Could not read', Number.isFinite(item.seconds) ? item.minutes.toFixed(3) : 'Could not read', Number.isFinite(item.seconds) ? formatDecimalHours(item.seconds) : 'Could not read', item.by]), ['', 'TOTAL DURATION', '', totalSeconds.toFixed(3), (totalSeconds / 60).toFixed(3), formatDecimalHours(totalSeconds), ''], ['', 'ESTIMATED DURATION', '', Math.round(totalSeconds), formatMinuteDuration(totalSeconds), formatHourDuration(totalSeconds), '']];
       const csv = '\ufeff' + lines.map(line => line.map(csvCell).join(',')).join('\r\n');
       const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
       const url = URL.createObjectURL(blob);
@@ -341,7 +344,7 @@
       link.download = 'wav-duration-report.csv';
       link.click();
       URL.revokeObjectURL(url);
-      status.textContent = `Exported ${scannedResults.length} readable WAV result${scannedResults.length === 1 ? '' : 's'}.`;
+      status.textContent = `Exported ${scannedResults.length} WAV file${scannedResults.length === 1 ? '' : 's'}.`;
     }
 
     function csvCell(value) {
