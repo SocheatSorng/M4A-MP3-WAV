@@ -2,10 +2,13 @@
 const { createFFmpeg, fetchFile } = FFmpeg;
 
 const dropZone = document.querySelector('#dropZone');
-const fileInput = document.querySelector('#fileInput');
 const folderInput = document.querySelector('#folderInput');
-const filePickerButton = document.querySelector('#filePickerButton');
 const folderPickerButton = document.querySelector('#folderPickerButton');
+const unsupportedPanel = document.querySelector('#unsupportedPanel');
+const unsupportedMessage = document.querySelector('#unsupportedMessage');
+const unsupportedToggle = document.querySelector('#unsupportedToggle');
+const unsupportedList = document.querySelector('#unsupportedList');
+const unsupportedClose = document.querySelector('#unsupportedClose');
 const filePanel = document.querySelector('#filePanel');
 const queueTitle = document.querySelector('#queueTitle');
 const queueMeta = document.querySelector('#queueMeta');
@@ -22,16 +25,18 @@ const resultTitle = document.querySelector('#resultTitle');
 const resultList = document.querySelector('#resultList');
 const downloadAllButton = document.querySelector('#downloadAllButton');
 const toast = document.querySelector('#toast');
+const toastMessage = document.querySelector('#toastMessage');
+const toastClose = document.querySelector('#toastClose');
 const prefixInput = document.querySelector('#prefixInput');
 
 let selectedFiles = [];
 let outputUrls = [];
 let convertedFiles = [];
-let toastTimer = null;
 let conversionIndex = 0;
 let conversionTotal = 1;
 let conversionComplete = false;
 let languageText = null;
+let unsupportedFiles = [];
 let lastFfmpegMessage = '';
 let ffmpeg;
 const resultsDatabaseName = 'wavecraft-results';
@@ -163,11 +168,39 @@ function createFfmpeg() {
 ffmpeg = createFfmpeg();
 
 function showToast(message) {
-  toast.textContent = message;
+  toastMessage.textContent = message;
+  toast.hidden = false;
   toast.classList.add('show');
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => toast.classList.remove('show'), 3500);
 }
+
+toastClose.addEventListener('click', () => {
+  toast.classList.remove('show');
+  toast.hidden = true;
+  toastMessage.textContent = '';
+});
+
+function showUnsupportedFiles(files) {
+  unsupportedFiles = files;
+  unsupportedMessage.textContent = `${languageText?.unsupportedFiles || 'Unsupported files ignored'} (${files.length}):`;
+  unsupportedList.replaceChildren(...files.map((file) => {
+    const item = document.createElement('li');
+    item.textContent = file.name;
+    return item;
+  }));
+  unsupportedToggle.hidden = files.length === 0;
+  unsupportedToggle.setAttribute('aria-expanded', 'false');
+  unsupportedList.hidden = true;
+  unsupportedToggle.querySelector('span').textContent = languageText?.showAllFiles || 'Show all files';
+  unsupportedPanel.classList.remove('is-hidden');
+}
+
+unsupportedClose.addEventListener('click', () => unsupportedPanel.classList.add('is-hidden'));
+unsupportedToggle.addEventListener('click', () => {
+  const expanded = unsupportedToggle.getAttribute('aria-expanded') === 'true';
+  unsupportedToggle.setAttribute('aria-expanded', String(!expanded));
+  unsupportedList.hidden = expanded;
+  unsupportedToggle.querySelector('span').textContent = expanded ? (languageText?.showAllFiles || 'Show all files') : (languageText?.hideAllFiles || 'Hide all files');
+});
 
 function formatBytes(bytes) {
   if (!bytes) return '0 B';
@@ -198,7 +231,11 @@ function updateQueue() {
   selectedFiles.forEach((file, index) => {
     const item = document.createElement('li');
     item.className = 'queue-item';
-    item.innerHTML = `<div class="file-details"><strong title="${file.name}">${file.name}</strong><span>${formatBytes(file.size)}</span></div><button class="remove-file" type="button" aria-label="Remove ${file.name}" title="Remove file">×</button>`;
+    item.innerHTML = `<div class="file-details"><strong title="${file.name}">${file.name}</strong><span>${formatBytes(file.size)}</span></div><button class="remove-file" type="button">×</button>`;
+    const removeButton = item.querySelector('.remove-file');
+    const removeLabel = `${languageText?.removeFile || 'Remove'} ${file.name}`;
+    removeButton.setAttribute('aria-label', removeLabel);
+    removeButton.title = removeLabel;
     item.querySelector('.remove-file').addEventListener('click', () => {
       selectedFiles.splice(index, 1);
       updateQueue();
@@ -217,6 +254,10 @@ function updateQueue() {
 function selectFiles(files) {
   const incomingFiles = Array.from(files || []);
   if (!incomingFiles.length) return;
+  const unsupportedFiles = incomingFiles.filter((file) => !isSupported(file));
+  if (unsupportedFiles.length) {
+    showUnsupportedFiles(unsupportedFiles);
+  }
   const validFiles = incomingFiles.filter((file) => {
     if (!isSupported(file)) return false;
     if (file.size > 500 * 1024 * 1024) {
@@ -227,7 +268,7 @@ function selectFiles(files) {
   });
   const existingKeys = new Set(selectedFiles.map((file) => `${file.name}:${file.size}:${file.lastModified}`));
   const newFiles = validFiles.filter((file) => !existingKeys.has(`${file.name}:${file.size}:${file.lastModified}`));
-  if (!newFiles.length && !validFiles.length) showToast(languageText?.chooseSupported || 'Please choose M4A or MP3 files.');
+  if (!newFiles.length && !validFiles.length && !unsupportedFiles.length) showToast(languageText?.chooseSupported || 'Please choose M4A or MP3 files.');
   selectedFiles.push(...newFiles);
   conversionComplete = false;
   result.classList.add('is-hidden');
@@ -237,7 +278,7 @@ function selectFiles(files) {
 function clearFile() {
   selectedFiles = [];
   conversionComplete = false;
-  fileInput.value = '';
+  unsupportedPanel.classList.add('is-hidden');
   folderInput.value = '';
   updateQueue();
   result.classList.add('is-hidden');
@@ -248,24 +289,31 @@ function clearFile() {
 }
 
 async function chooseFolder() {
-  if (typeof window.showDirectoryPicker !== 'function') {
+  if (typeof window.showDirectoryPicker === 'function') {
+    try {
+      const directoryHandle = await window.showDirectoryPicker({ mode: 'read' });
+      const files = [];
+      const collectFiles = async directory => {
+        for await (const entry of directory.values()) {
+          if (entry.kind === 'file') files.push(await entry.getFile());
+          if (entry.kind === 'directory') await collectFiles(entry);
+        }
+      };
+      await collectFiles(directoryHandle);
+      selectFiles(files);
+    } catch (error) {
+      if (error.name !== 'AbortError') showToast(languageText?.unableFolder || 'Unable to read that folder.');
+    }
+    return;
+  }
+  if ('webkitdirectory' in folderInput) {
+    folderInput.setAttribute('webkitdirectory', '');
+    folderInput.setAttribute('directory', '');
+    folderInput.multiple = true;
     folderInput.click();
     return;
   }
-  try {
-    const directoryHandle = await window.showDirectoryPicker({ mode: 'read' });
-    const files = [];
-    const collectFiles = async (directory) => {
-      for await (const entry of directory.values()) {
-        if (entry.kind === 'file') files.push(await entry.getFile());
-        if (entry.kind === 'directory') await collectFiles(entry);
-      }
-    };
-    await collectFiles(directoryHandle);
-    selectFiles(files);
-  } catch (error) {
-    if (error.name !== 'AbortError') showToast(languageText?.unableFolder || 'Unable to read that folder.');
-  }
+  showToast(languageText?.unableFolder || 'Unable to read that folder.');
 }
 
 async function downloadAll() {
@@ -298,7 +346,6 @@ async function convert() {
   conversionComplete = false;
   convertButton.disabled = true;
   clearButton.disabled = true;
-  filePickerButton.disabled = true;
   folderPickerButton.disabled = true;
   prefixInput.disabled = true;
   progressBlock.classList.remove('is-hidden');
@@ -380,7 +427,6 @@ async function convert() {
   } finally {
     convertButton.disabled = false;
     clearButton.disabled = false;
-    filePickerButton.disabled = false;
     folderPickerButton.disabled = false;
     prefixInput.disabled = false;
     buttonLabel.textContent = selectedFiles.length > 1 ? `${languageText?.convertToWav || 'Convert'} ${selectedFiles.length} ${languageText?.files || 'files'}` : (languageText?.convertToWav || 'Convert to WAV');
@@ -388,18 +434,20 @@ async function convert() {
 }
 
 dropZone.addEventListener('click', (event) => {
-  if (event.target.closest('button')) return;
-  fileInput.click();
+  if (event.target.closest('.picker-actions')) return;
+  chooseFolder();
 });
 dropZone.addEventListener('keydown', (event) => {
   if (event.key === 'Enter' || event.key === ' ') {
     event.preventDefault();
-    fileInput.click();
+    chooseFolder();
   }
 });
-filePickerButton.addEventListener('click', (event) => { event.stopPropagation(); fileInput.click(); });
-folderPickerButton.addEventListener('click', (event) => { event.stopPropagation(); chooseFolder(); });
-fileInput.addEventListener('change', (event) => { selectFiles(event.target.files); fileInput.value = ''; });
+folderPickerButton.addEventListener('click', (event) => {
+  event.preventDefault();
+  event.stopImmediatePropagation();
+  chooseFolder();
+});
 folderInput.addEventListener('change', (event) => { selectFiles(event.target.files); folderInput.value = ''; });
 clearButton.addEventListener('click', clearFile);
 convertButton.addEventListener('click', convert);
@@ -414,6 +462,10 @@ window.addEventListener('wavecraft:language', (event) => {
   languageText = event.detail.translations;
   updateQueue();
   renderResults();
+  if (unsupportedFiles.length) {
+    const expanded = unsupportedToggle.getAttribute('aria-expanded') === 'true';
+    unsupportedToggle.querySelector('span').textContent = expanded ? (languageText?.hideAllFiles || 'Hide all files') : (languageText?.showAllFiles || 'Show all files');
+  }
 });
 ['dragenter', 'dragover'].forEach((eventName) => dropZone.addEventListener(eventName, (event) => {
   event.preventDefault();
@@ -423,6 +475,7 @@ window.addEventListener('wavecraft:language', (event) => {
   event.preventDefault();
   dropZone.classList.remove('dragging');
 }));
+
 dropZone.addEventListener('drop', (event) => selectFiles(event.dataTransfer.files));
 clearAllSavedDataOnReload()
   .then(() => Promise.all([loadConvertedResults(), loadQueuedFiles()]))
