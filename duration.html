@@ -9,6 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js"></script>
   <style>
     :root {
       --ink: #102a56;
@@ -45,10 +46,10 @@
     .brand { display: flex; align-items: center; gap: 12px; font-weight: 700; letter-spacing: .03em; }
     .brand-mark { width: 38px; height: 38px; display: grid; place-items: center; color: white; background: var(--teal); border-radius: 10px; font-family: "Space Grotesk", sans-serif; font-weight: 800; }
     .privacy { color: var(--muted); font: 500 10px/1.4 "DM Mono", monospace; letter-spacing: .04em; text-transform: uppercase; }
-    .hero { width: min(100%, 740px); margin-inline: auto; padding-top: 78px; margin-bottom: 34px; }
+    .hero { width: 100%; margin-inline: auto; padding-top: 78px; margin-bottom: 34px; }
     h1 { margin: 0 0 17px; font-size: clamp(42px, 7vw, 76px); line-height: .98; font-weight: 600; letter-spacing: -.045em; }
     .intro { max-width: 570px; margin: 0; color: var(--muted); font: 400 17px/1.6 "Space Grotesk", sans-serif; }
-    .picker { width: min(100%, 740px); margin-inline: auto; position: relative; display: flex; align-items: center; justify-content: space-between; gap: 22px; min-height: 138px; padding: 27px 31px; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow); overflow: hidden; }
+    .picker { width: 100%; margin-inline: auto; position: relative; display: flex; align-items: center; justify-content: space-between; gap: 22px; min-height: 138px; padding: 27px 31px; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow); overflow: hidden; }
     .picker::after { content: ""; position: absolute; width: 180px; height: 180px; right: -55px; top: -78px; border: 1px solid var(--mint); border-radius: 50%; pointer-events: none; }
     .picker-copy { position: relative; z-index: 1; }
     .picker-title { display: block; margin-bottom: 6px; font-size: 24px; }
@@ -65,11 +66,19 @@
     .metric:first-child { background: var(--teal); color: white; border-color: var(--teal); }
     .metric-label { display: block; margin-bottom: 10px; font: 500 10px "DM Mono", monospace; letter-spacing: .09em; text-transform: uppercase; opacity: .72; }
     .metric-value { display: block; font-size: 30px; line-height: 1; white-space: nowrap; }
-    .non-wav-panel { margin-bottom: 28px; padding: 15px 20px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; }
+    .non-wav-panel { margin-top: 12px; margin-bottom: 28px; padding: 15px 20px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; }
     .non-wav-toggle { display: inline-flex; align-items: center; gap: 8px; padding: 0; border: 0; color: var(--teal-dark); background: transparent; font: 600 12px "Space Grotesk", sans-serif; cursor: pointer; }
     .non-wav-toggle:hover { color: var(--teal); }
+    .non-wav-actions { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+    .convert-all-button { flex: 0 0 auto; padding: 8px 11px; border: 1px solid var(--teal); border-radius: 6px; color: white; background: var(--teal); font: 600 10px "Space Grotesk", sans-serif; cursor: pointer; }
+    .convert-all-button:hover { background: var(--teal-dark); }
     .non-wav-list { display: grid; gap: 6px; margin: 14px 0 0; padding: 14px 0 0 18px; border-top: 1px solid var(--line); color: var(--muted); font: 400 12px/1.4 "DM Mono", monospace; }
     .non-wav-list[hidden] { display: none; }
+    .non-wav-item { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-left: 4px; }
+    .non-wav-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .convert-file-button { flex: 0 0 auto; padding: 6px 9px; border: 1px solid var(--teal); border-radius: 6px; color: var(--teal); background: white; font: 600 10px "Space Grotesk", sans-serif; cursor: pointer; }
+    .convert-file-button:hover:not(:disabled) { color: white; background: var(--teal); }
+    .convert-file-button:disabled { cursor: wait; opacity: .55; }
     .table-wrap { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
     .table-head { display: flex; align-items: center; justify-content: space-between; gap: 15px; padding: 18px 21px; border-bottom: 1px solid var(--line); }
     .table-title { margin: 0; font-size: 22px; font-weight: 500; }
@@ -158,7 +167,10 @@
     </section>
 
     <section id="non-wav-panel" class="non-wav-panel" hidden aria-label="Non-WAV files">
-      <button id="non-wav-toggle" class="non-wav-toggle" type="button" aria-expanded="false" aria-controls="non-wav-list">Show non-WAV files (<span id="non-wav-count">0</span>)</button>
+      <div class="non-wav-actions">
+        <button id="non-wav-toggle" class="non-wav-toggle" type="button" aria-expanded="false" aria-controls="non-wav-list">Show non-WAV files (<span id="non-wav-count">0</span>)</button>
+        <button id="convert-all-button" class="convert-all-button" type="button" hidden>Convert all to WAV</button>
+      </div>
       <ul id="non-wav-list" class="non-wav-list" hidden></ul>
     </section>
 
@@ -193,12 +205,16 @@
     const exportButton = document.querySelector('#export-button');
     const nonWavPanel = document.querySelector('#non-wav-panel');
     const nonWavToggle = document.querySelector('#non-wav-toggle');
+    const convertAllButton = document.querySelector('#convert-all-button');
     const nonWavCountEl = document.querySelector('#non-wav-count');
     const nonWavList = document.querySelector('#non-wav-list');
     let scannedResults = [];
+    let durationFfmpeg;
     let selectedFolderName = 'Selected folder';
     const durationDatabaseName = 'wavecraft-duration-ledger';
     const durationStoreName = 'duration-ledger';
+    const converterQueueDatabaseName = 'wavecraft-converter-queue';
+    const converterQueueStoreName = 'files';
 
     function openDurationDatabase() {
       return new Promise((resolve, reject) => {
@@ -302,6 +318,7 @@
     fileInput.addEventListener('change', () => scanFiles([...fileInput.files]));
     window.addEventListener('wavecraft:converted', event => scanFiles(event.detail.files));
     exportButton.addEventListener('click', exportCsv);
+    convertAllButton.addEventListener('click', convertAllNonWavFiles);
     nonWavToggle.addEventListener('click', () => {
       const expanded = nonWavToggle.getAttribute('aria-expanded') === 'true';
       nonWavToggle.setAttribute('aria-expanded', String(!expanded));
@@ -314,7 +331,7 @@
 
     async function scanFiles(files) {
       const wavFiles = files.filter(file => file.name.toLowerCase().endsWith('.wav'));
-      const nonWavFiles = files.filter(file => !file.name.toLowerCase().endsWith('.wav')).map(file => file.webkitRelativePath || file.name);
+      const nonWavFiles = files.filter(file => !file.name.toLowerCase().endsWith('.wav'));
       selectedFolderName = getSelectedFolderName(wavFiles) || 'Selected folder';
       scannedResults = [];
       exportButton.disabled = true;
@@ -378,7 +395,7 @@
       status.textContent = failedWavCount ? `Finished with ${failedWavCount} unreadable file${failedWavCount === 1 ? '' : 's'}.` : 'Scan complete. All WAV files were read locally.';
       resultCount.textContent = `${successes} readable of ${wavFiles.length} WAV file${wavFiles.length === 1 ? '' : 's'}`;
       exportButton.disabled = scannedResults.length === 0;
-      await saveDurationLedger({ results: scannedResults, totalSeconds, totalSize, longestSeconds: longest.seconds, fileCount: wavFiles.length, failedCount: failedWavCount + nonWavFiles.length, nonWavFiles, folderName: selectedFolderName });
+      await saveDurationLedger({ results: scannedResults, totalSeconds, totalSize, longestSeconds: longest.seconds, fileCount: wavFiles.length, failedCount: failedWavCount + nonWavFiles.length, nonWavFiles: nonWavFiles.map(file => file.webkitRelativePath || file.name), folderName: selectedFolderName });
     }
 
     function exportCsv() {
@@ -528,14 +545,104 @@
     function renderNonWavFiles(files) {
       nonWavPanel.hidden = files.length === 0;
       nonWavCountEl.textContent = files.length;
+      const convertibleFiles = files.filter(file => file instanceof File && /\.(m4a|mp3)$/i.test(file.name));
+      convertAllButton.hidden = convertibleFiles.length === 0;
+      convertAllButton.textContent = `Convert all ${convertibleFiles.length} to WAV`;
       nonWavList.replaceChildren(...files.map(file => {
         const item = document.createElement('li');
-        item.textContent = file;
+        item.className = 'non-wav-item';
+        item.file = file;
+        const name = document.createElement('span');
+        name.className = 'non-wav-name';
+        name.textContent = typeof file === 'string' ? file : (file.webkitRelativePath || file.name);
+        item.append(name);
+        if (file instanceof File && /\.(m4a|mp3)$/i.test(file.name)) {
+          const convertButton = document.createElement('button');
+          convertButton.className = 'convert-file-button';
+          convertButton.type = 'button';
+          convertButton.textContent = 'Convert to WAV';
+          convertButton.addEventListener('click', () => convertNonWavFile(file, convertButton));
+          item.append(convertButton);
+        }
         return item;
       }));
       nonWavList.hidden = true;
       nonWavToggle.setAttribute('aria-expanded', 'false');
       nonWavToggle.firstChild.textContent = 'Show non-WAV files (';
+    }
+
+    async function convertAllNonWavFiles() {
+      const files = [...nonWavList.querySelectorAll('.non-wav-item')]
+        .map(item => item.file)
+        .filter(file => file instanceof File && /\.(m4a|mp3)$/i.test(file.name));
+      if (!files.length) return;
+      convertAllButton.disabled = true;
+      convertAllButton.textContent = 'Opening converter...';
+      try {
+        const database = await openConverterQueueDatabase();
+        await new Promise((resolve, reject) => {
+          const transaction = database.transaction(converterQueueStoreName, 'readwrite');
+          transaction.objectStore(converterQueueStoreName).put(files, 'pending');
+          transaction.oncomplete = resolve;
+          transaction.onerror = () => reject(transaction.error);
+        });
+        database.close();
+        window.location.href = 'index.html';
+      } catch (error) {
+        console.error('Could not prepare converter queue', error);
+        convertAllButton.disabled = false;
+        convertAllButton.textContent = `Convert all ${files.length} to WAV`;
+      }
+    }
+
+    function openConverterQueueDatabase() {
+      return new Promise((resolve, reject) => {
+        const request = indexedDB.open(converterQueueDatabaseName, 1);
+        request.onupgradeneeded = () => {
+          if (!request.result.objectStoreNames.contains(converterQueueStoreName)) request.result.createObjectStore(converterQueueStoreName);
+        };
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      });
+    }
+
+    async function convertNonWavFile(file, button) {
+      button.disabled = true;
+      button.textContent = 'Converting...';
+      const extension = file.name.toLowerCase().endsWith('.m4a') ? '.m4a' : '.mp3';
+      const inputName = `duration-input${extension}`;
+      const outputName = 'duration-output.wav';
+      try {
+        if (!durationFfmpeg) {
+          durationFfmpeg = FFmpeg.createFFmpeg({
+            log: false,
+            mainName: 'duration-main',
+            corePath: 'https://unpkg.com/@ffmpeg/core-st@0.11.1/dist/ffmpeg-core.js'
+          });
+        }
+        if (!durationFfmpeg.isLoaded()) await durationFfmpeg.load();
+        durationFfmpeg.FS('writeFile', inputName, await FFmpeg.fetchFile(file));
+        await durationFfmpeg.run('-y', '-i', inputName, '-vn', '-acodec', 'pcm_s16le', outputName);
+        const data = durationFfmpeg.FS('readFile', outputName);
+        const url = URL.createObjectURL(new Blob([data], { type: 'audio/wav' }));
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${file.name.replace(/\.[^/.]+$/, '')}.wav`;
+        link.click();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        button.textContent = 'Downloaded';
+      } catch (error) {
+        console.error(`Conversion failed for ${file.name}`, error);
+        button.textContent = 'Try again';
+      } finally {
+        try {
+          durationFfmpeg.FS('unlink', inputName);
+          durationFfmpeg.FS('unlink', outputName);
+        } catch (error) {
+          // Temporary FFmpeg files may already be gone after a failed conversion.
+        }
+        button.disabled = false;
+      }
     }
 
     function formatBytes(bytes) {

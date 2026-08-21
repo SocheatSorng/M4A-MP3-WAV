@@ -31,10 +31,13 @@ let convertedFiles = [];
 let toastTimer = null;
 let conversionIndex = 0;
 let conversionTotal = 1;
+let conversionComplete = false;
 let lastFfmpegMessage = '';
 let ffmpeg;
 const resultsDatabaseName = 'wavecraft-results';
 const resultsStoreName = 'converted-wav';
+const converterQueueDatabaseName = 'wavecraft-converter-queue';
+const converterQueueStoreName = 'files';
 
 function openResultsDatabase() {
   return new Promise((resolve, reject) => {
@@ -65,7 +68,30 @@ async function loadConvertedResults() {
   });
   database.close();
   convertedFiles = savedResults.map(({ name, data }) => ({ name, data: new Uint8Array(data) }));
+  conversionComplete = convertedFiles.length > 0;
   renderResults();
+}
+
+async function loadQueuedFiles() {
+  const database = await new Promise((resolve, reject) => {
+    const request = indexedDB.open(converterQueueDatabaseName, 1);
+    request.onupgradeneeded = () => request.result.createObjectStore(converterQueueStoreName);
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+  const files = await new Promise((resolve, reject) => {
+    const request = database.transaction(converterQueueStoreName).objectStore(converterQueueStoreName).get('pending');
+    request.onsuccess = () => resolve(request.result || []);
+    request.onerror = () => reject(request.error);
+  });
+  await new Promise((resolve, reject) => {
+    const transaction = database.transaction(converterQueueStoreName, 'readwrite');
+    transaction.objectStore(converterQueueStoreName).delete('pending');
+    transaction.oncomplete = resolve;
+    transaction.onerror = () => reject(transaction.error);
+  });
+  database.close();
+  if (files.length) selectFiles(files);
 }
 
 async function clearSavedResults() {
@@ -114,6 +140,7 @@ function renderResults() {
   } else {
     result.classList.add('is-hidden');
   }
+  downloadAllButton.disabled = !conversionComplete;
 }
 
 function createFfmpeg() {
@@ -202,12 +229,14 @@ function selectFiles(files) {
   const newFiles = validFiles.filter((file) => !existingKeys.has(`${file.name}:${file.size}:${file.lastModified}`));
   if (!newFiles.length && !validFiles.length) showToast('Please choose M4A or MP3 files.');
   selectedFiles.push(...newFiles);
+  conversionComplete = false;
   result.classList.add('is-hidden');
   updateQueue();
 }
 
 function clearFile() {
   selectedFiles = [];
+  conversionComplete = false;
   fileInput.value = '';
   folderInput.value = '';
   updateQueue();
@@ -266,6 +295,7 @@ async function downloadAll() {
 
 async function convert() {
   if (!selectedFiles.length) return;
+  conversionComplete = false;
   convertButton.disabled = true;
   clearButton.disabled = true;
   filePickerButton.disabled = true;
@@ -333,6 +363,8 @@ async function convert() {
     }
     if (!outputUrls.length) throw new Error('No files could be converted.');
     await saveConvertedResults();
+    conversionComplete = failures.length === 0 && convertedFiles.length === selectedFiles.length;
+    downloadAllButton.disabled = !conversionComplete;
     resultTitle.textContent = `${outputUrls.length} WAV file${outputUrls.length === 1 ? '' : 's'} ready${failures.length ? `, ${failures.length} skipped` : ''}`;
     progressBar.style.width = '100%';
     progressPercent.textContent = '100%';
@@ -398,6 +430,6 @@ downloadAllButton.addEventListener('click', downloadAll);
 }));
 dropZone.addEventListener('drop', (event) => selectFiles(event.dataTransfer.files));
 clearAllSavedDataOnReload()
-  .then(() => loadConvertedResults())
+  .then(() => Promise.all([loadConvertedResults(), loadQueuedFiles()]))
   .catch((error) => console.warn('Could not initialize saved results', error));
 })();
