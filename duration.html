@@ -332,11 +332,7 @@
       if (!scannedResults.length) return;
       const totalSeconds = scannedResults.reduce((sum, item) => sum + item.seconds, 0);
       const headers = ['No.', 'Code', 'RT (Second)', 'RT (Minute)', 'RT (Hour)', 'By'];
-      const lines = [
-        headers,
-        ['', 'TOTAL DURATION', totalSeconds.toFixed(3), (totalSeconds / 60).toFixed(3), formatDecimalHours(totalSeconds), ''],
-        ['', 'ESTIMATED DURATION', Math.round(totalSeconds), formatMinuteDuration(totalSeconds), formatHourDuration(totalSeconds), '']
-      ];
+      const lines = [headers, ...scannedResults.map((item, index) => [index + 1, item.code, item.seconds.toFixed(3), item.minutes.toFixed(3), formatDecimalHours(item.seconds), item.by]), ['', 'TOTAL DURATION', totalSeconds.toFixed(3), (totalSeconds / 60).toFixed(3), formatDecimalHours(totalSeconds), ''], ['', 'ESTIMATED DURATION', Math.round(totalSeconds), formatMinuteDuration(totalSeconds), formatHourDuration(totalSeconds), '']];
       const csv = '\ufeff' + lines.map(line => line.map(csvCell).join(',')).join('\r\n');
       const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
       const url = URL.createObjectURL(blob);
