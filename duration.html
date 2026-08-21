@@ -84,7 +84,8 @@
     .total-detail span { white-space: nowrap; }
     .error { color: var(--danger); }
     .empty { padding: 45px 20px; color: var(--muted); text-align: center; font: 400 14px/1.5 "Space Grotesk", sans-serif; }
-    .site-footer { order: 5; display: flex; justify-content: space-between; gap: 15px; margin-top: 70px; padding-top: 20px; color: var(--muted); font: 500 10px "DM Mono", monospace; letter-spacing: .13em; }
+    .site-footer { order: 5; display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-top: 70px; padding-top: 18px; color: var(--muted); border-top: 1px solid var(--line); font: 500 10px "DM Mono", monospace; letter-spacing: .1em; }
+    .footer-brand { color: var(--ink); font-weight: 600; letter-spacing: .16em; }.footer-note { margin-inline: auto; }.footer-note i { color: var(--amber); font-style: normal; margin: 0 5px; }.footer-year { color: var(--muted); }
     .converter { margin: 28px 0 34px; padding: 25px; color: #102a56; background: #f7f9fd; border: 1px solid #c5cfdf; border-radius: 14px; }
     .converter-heading { display: flex; justify-content: space-between; gap: 20px; align-items: end; margin-bottom: 20px; }
     .converter-heading h2 { margin: 0 0 5px; font-size: 28px; font-weight: 500; }
@@ -113,7 +114,7 @@
       th:nth-child(2), td:nth-child(2) { display: none; }
       .file-name { max-width: 210px; }
       .converter { padding: 19px; }.converter-heading { align-items: flex-start; flex-direction: column; gap: 8px; }.converter .drop-zone { align-items: flex-start; flex-direction: column; text-align: left; }.converter .actions { align-items: stretch; flex-direction: column; }.converter .convert-button { width: 100%; }.converter .result-heading { align-items: stretch; flex-direction: column; }.converter .download-all-button { width: 100%; }
-      .site-footer { gap: 12px; flex-wrap: wrap; font-size: 8px; }
+      .site-footer { gap: 12px; flex-wrap: wrap; font-size: 8px; }.footer-note { margin-inline: 0; }
     }
   </style>
 </head>
@@ -124,8 +125,8 @@
     </header>
 
     <section class="hero">
-      <h1>Know exactly how much audio you have.</h1>
-      <p class="intro">Choose a parent folder and get the combined duration of every WAV recording inside it, including nested folders.</p>
+      <h1>Measure your audio library.</h1>
+      <p class="intro">Scan a folder to calculate the total duration of every WAV recording, including files in nested folders.</p>
     </section>
 
     <section class="picker" aria-label="Choose a folder">
@@ -156,7 +157,7 @@
         <tbody id="rows"></tbody>
       </table>
     </section>
-    <footer class="site-footer"><span>FFMPEG.WASM</span><span>BROWSER AUDIO TOOLS</span><span>2026</span></footer>
+    <footer class="site-footer"><span class="footer-brand">AUDIO TOOLS</span><span class="footer-note">LOCAL PROCESSING <i>·</i> FFMPEG.WASM</span><span class="footer-year">2026</span></footer>
   </main>
 
   <script>
@@ -347,8 +348,8 @@
       if (!scannedResults.length) return;
       const readableResults = scannedResults.filter(item => Number.isFinite(item.seconds));
       const totalSeconds = readableResults.reduce((sum, item) => sum + item.seconds, 0);
-      const headers = ['No.', 'Code', 'Location', 'RT (Second)', 'RT (Minute)', 'RT (Hour)', 'By'];
-      const lines = [headers, ...scannedResults.map((item, index) => [index + 1, item.code, item.location || 'Selected folder', Number.isFinite(item.seconds) ? item.seconds.toFixed(3) : 'Could not read', Number.isFinite(item.seconds) ? item.minutes.toFixed(3) : 'Could not read', Number.isFinite(item.seconds) ? formatDecimalHours(item.seconds) : 'Could not read', item.by]), ['', 'TOTAL DURATION', '', totalSeconds.toFixed(3), (totalSeconds / 60).toFixed(3), formatDecimalHours(totalSeconds), ''], ['', 'ESTIMATED DURATION', '', Math.round(totalSeconds), formatMinuteDuration(totalSeconds), formatHourDuration(totalSeconds), '']];
+      const headers = ['No.', 'Code', 'RT (Second)', 'RT (Minute)', 'RT (Hour)', 'By'];
+      const lines = [headers, ...scannedResults.map((item, index) => [index + 1, item.code, Number.isFinite(item.seconds) ? item.seconds.toFixed(3) : 'Could not read', Number.isFinite(item.seconds) ? item.minutes.toFixed(3) : 'Could not read', Number.isFinite(item.seconds) ? formatDecimalHours(item.seconds) : 'Could not read', item.by]), ['', 'TOTAL DURATION', totalSeconds.toFixed(3), (totalSeconds / 60).toFixed(3), formatDecimalHours(totalSeconds), ''], ['', 'ESTIMATED DURATION', Math.round(totalSeconds), formatMinuteDuration(totalSeconds), formatHourDuration(totalSeconds), '']];
       const csv = '\ufeff' + lines.map(line => line.map(csvCell).join(',')).join('\r\n');
       const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
       const url = URL.createObjectURL(blob);

@@ -22,6 +22,8 @@ const resultTitle = document.querySelector('#resultTitle');
 const resultList = document.querySelector('#resultList');
 const downloadAllButton = document.querySelector('#downloadAllButton');
 const toast = document.querySelector('#toast');
+const prefixInput = document.querySelector('#prefixInput');
+const middlefixInput = document.querySelector('#middlefixInput');
 
 let selectedFiles = [];
 let outputUrls = [];
@@ -147,6 +149,11 @@ function formatBytes(bytes) {
   return `${(bytes / 1024 ** index).toFixed(index ? 1 : 0)} ${units[index]}`;
 }
 
+function normalizeFilenamePrefix(value) {
+  const prefix = value.trim();
+  return prefix && !prefix.endsWith('_') ? `${prefix}_` : prefix;
+}
+
 function isSupported(file) {
   return /\.(m4a|mp3)$/i.test(file.name) || ['audio/mp4', 'audio/m4a', 'audio/mpeg'].includes(file.type);
 }
@@ -263,6 +270,8 @@ async function convert() {
   clearButton.disabled = true;
   filePickerButton.disabled = true;
   folderPickerButton.disabled = true;
+  prefixInput.disabled = true;
+  middlefixInput.disabled = true;
   progressBlock.classList.remove('is-hidden');
   result.classList.add('is-hidden');
   resultList.replaceChildren();
@@ -297,7 +306,11 @@ async function convert() {
         ffmpeg.FS('writeFile', inputName, await fetchFile(selectedFile));
         await ffmpeg.run('-y', '-i', inputName, '-vn', '-acodec', 'pcm_s16le', outputFile);
         const data = new Uint8Array(ffmpeg.FS('readFile', outputFile));
-        const outputFileName = `${selectedFile.name.replace(/\.[^/.]+$/, '')}.wav`;
+        const filenamePrefix = normalizeFilenamePrefix(prefixInput.value);
+        const filenameMiddlefix = normalizeFilenamePrefix(middlefixInput.value);
+        prefixInput.value = filenamePrefix;
+        middlefixInput.value = filenameMiddlefix;
+        const outputFileName = `${filenamePrefix}${filenameMiddlefix}${selectedFile.name.replace(/\.[^/.]+$/, '')}.wav`;
         convertedFiles.push({ name: outputFileName, data });
         renderResults();
       } catch (error) {
@@ -340,6 +353,8 @@ async function convert() {
     clearButton.disabled = false;
     filePickerButton.disabled = false;
     folderPickerButton.disabled = false;
+    prefixInput.disabled = false;
+    middlefixInput.disabled = false;
     buttonLabel.textContent = selectedFiles.length > 1 ? `Convert ${selectedFiles.length} files` : 'Convert to WAV';
   }
 }
@@ -360,6 +375,18 @@ fileInput.addEventListener('change', (event) => { selectFiles(event.target.files
 folderInput.addEventListener('change', (event) => { selectFiles(event.target.files); folderInput.value = ''; });
 clearButton.addEventListener('click', clearFile);
 convertButton.addEventListener('click', convert);
+prefixInput.addEventListener('blur', () => {
+  prefixInput.value = normalizeFilenamePrefix(prefixInput.value);
+});
+prefixInput.addEventListener('change', () => {
+  prefixInput.value = normalizeFilenamePrefix(prefixInput.value);
+});
+middlefixInput.addEventListener('blur', () => {
+  middlefixInput.value = normalizeFilenamePrefix(middlefixInput.value);
+});
+middlefixInput.addEventListener('change', () => {
+  middlefixInput.value = normalizeFilenamePrefix(middlefixInput.value);
+});
 downloadAllButton.addEventListener('click', downloadAll);
 ['dragenter', 'dragover'].forEach((eventName) => dropZone.addEventListener(eventName, (event) => {
   event.preventDefault();
