@@ -23,7 +23,6 @@ const resultList = document.querySelector('#resultList');
 const downloadAllButton = document.querySelector('#downloadAllButton');
 const toast = document.querySelector('#toast');
 const prefixInput = document.querySelector('#prefixInput');
-const middlefixInput = document.querySelector('#middlefixInput');
 
 let selectedFiles = [];
 let outputUrls = [];
@@ -32,6 +31,7 @@ let toastTimer = null;
 let conversionIndex = 0;
 let conversionTotal = 1;
 let conversionComplete = false;
+let languageText = null;
 let lastFfmpegMessage = '';
 let ffmpeg;
 const resultsDatabaseName = 'wavecraft-results';
@@ -131,11 +131,11 @@ function renderResults() {
     outputUrls.push(outputUrl);
     const resultItem = document.createElement('div');
     resultItem.className = 'result-item';
-    resultItem.innerHTML = `<strong title="${name}">${name}</strong><a class="download-button" href="${outputUrl}" download="${name}">Download <span>↓</span></a>`;
+    resultItem.innerHTML = `<strong title="${name}">${name}</strong><a class="download-button" href="${outputUrl}" download="${name}">${languageText?.download || 'Download'} <span>↓</span></a>`;
     resultList.appendChild(resultItem);
   });
   if (convertedFiles.length) {
-    resultTitle.textContent = `${convertedFiles.length} WAV file${convertedFiles.length === 1 ? '' : 's'} ready`;
+    resultTitle.textContent = `${convertedFiles.length} WAV file${convertedFiles.length === 1 ? '' : 's'} ${languageText?.ready || 'ready'}`;
     result.classList.remove('is-hidden');
   } else {
     result.classList.add('is-hidden');
@@ -206,12 +206,12 @@ function updateQueue() {
     queueList.appendChild(item);
   });
   const count = selectedFiles.length;
-  queueMeta.textContent = `${count} file${count === 1 ? '' : 's'}`;
-  queueTitle.textContent = count > 1 ? 'QUEUE' : 'SELECTED AUDIO';
+  queueMeta.textContent = `${count} ${languageText ? (count === 1 ? languageText.file : languageText.files) : `file${count === 1 ? '' : 's'}`}`;
+  queueTitle.textContent = count > 1 ? (languageText?.queue || 'QUEUE') : (languageText?.selectedAudioLabel || 'SELECTED AUDIO');
   filePanel.classList.toggle('is-hidden', count === 0);
   convertButton.disabled = count === 0;
-  buttonLabel.textContent = count > 1 ? `Convert ${count} files` : 'Convert to WAV';
-  dropZone.querySelector('#dropTitle').textContent = count ? `${count} audio file${count === 1 ? '' : 's'} selected` : 'Drop your audio here';
+  buttonLabel.textContent = count > 1 ? `${languageText?.convertToWav || 'Convert'} ${count} ${languageText?.files || 'files'}` : (languageText?.convertToWav || 'Convert to WAV');
+  dropZone.querySelector('#dropTitle').textContent = count ? `${count} ${count === 1 ? (languageText?.selectedAudio || 'audio file selected') : (languageText?.selectedAudioPlural || 'audio files selected')}` : (languageText?.dropTitle || 'Drop your audio here');
 }
 
 function selectFiles(files) {
@@ -220,14 +220,14 @@ function selectFiles(files) {
   const validFiles = incomingFiles.filter((file) => {
     if (!isSupported(file)) return false;
     if (file.size > 500 * 1024 * 1024) {
-      showToast(`${file.name} is larger than the 500 MB limit.`);
+      showToast(`${file.name} ${languageText?.tooLarge || 'is larger than the 500 MB limit.'}`);
       return false;
     }
     return true;
   });
   const existingKeys = new Set(selectedFiles.map((file) => `${file.name}:${file.size}:${file.lastModified}`));
   const newFiles = validFiles.filter((file) => !existingKeys.has(`${file.name}:${file.size}:${file.lastModified}`));
-  if (!newFiles.length && !validFiles.length) showToast('Please choose M4A or MP3 files.');
+  if (!newFiles.length && !validFiles.length) showToast(languageText?.chooseSupported || 'Please choose M4A or MP3 files.');
   selectedFiles.push(...newFiles);
   conversionComplete = false;
   result.classList.add('is-hidden');
@@ -264,14 +264,14 @@ async function chooseFolder() {
     await collectFiles(directoryHandle);
     selectFiles(files);
   } catch (error) {
-    if (error.name !== 'AbortError') showToast('Unable to read that folder.');
+    if (error.name !== 'AbortError') showToast(languageText?.unableFolder || 'Unable to read that folder.');
   }
 }
 
 async function downloadAll() {
   if (!convertedFiles.length || typeof JSZip === 'undefined') return;
   downloadAllButton.disabled = true;
-  downloadAllButton.firstChild.textContent = 'Packaging...';
+  downloadAllButton.firstChild.textContent = languageText?.packaging || 'Packaging...';
   try {
     const zip = new JSZip();
     convertedFiles.forEach(({ name, data }) => zip.file(name, data));
@@ -286,10 +286,10 @@ async function downloadAll() {
     setTimeout(() => URL.revokeObjectURL(zipUrl), 1000);
   } catch (error) {
     console.error('Could not create ZIP download', error);
-    showToast('Could not package the converted files.');
+    showToast(languageText?.packageFailed || 'Could not package the converted files.');
   } finally {
     downloadAllButton.disabled = false;
-    downloadAllButton.firstChild.textContent = 'Download all ';
+    downloadAllButton.firstChild.textContent = `${languageText?.downloadAll || 'Download all'} `;
   }
 }
 
@@ -301,7 +301,6 @@ async function convert() {
   filePickerButton.disabled = true;
   folderPickerButton.disabled = true;
   prefixInput.disabled = true;
-  middlefixInput.disabled = true;
   progressBlock.classList.remove('is-hidden');
   result.classList.add('is-hidden');
   resultList.replaceChildren();
@@ -315,7 +314,7 @@ async function convert() {
   }
   progressBar.style.width = '0%';
   progressPercent.textContent = '0%';
-  buttonLabel.textContent = 'Converting...';
+  buttonLabel.textContent = languageText?.converting || 'Converting...';
   conversionTotal = selectedFiles.length;
   const failures = [];
 
@@ -323,13 +322,13 @@ async function convert() {
     for (let index = 0; index < selectedFiles.length; index += 1) {
       conversionIndex = index;
       const selectedFile = selectedFiles[index];
-      progressLabel.textContent = `Converting ${index + 1} of ${conversionTotal}: ${selectedFile.name}`;
+      progressLabel.textContent = `${languageText?.converting || 'Converting...'} ${index + 1} of ${conversionTotal}: ${selectedFile.name}`;
       const extension = selectedFile.name.toLowerCase().endsWith('.m4a') ? '.m4a' : '.mp3';
       const inputName = `input-${index}${extension}`;
       const outputFile = `output-${index}.wav`;
       try {
         if (!ffmpeg.isLoaded()) {
-          progressLabel.textContent = `Loading FFmpeg for file ${index + 1} of ${conversionTotal}...`;
+          progressLabel.textContent = `${languageText?.loadingFfmpeg || 'Loading FFmpeg for file'} ${index + 1} of ${conversionTotal}...`;
           await ffmpeg.load();
         }
         lastFfmpegMessage = '';
@@ -337,10 +336,8 @@ async function convert() {
         await ffmpeg.run('-y', '-i', inputName, '-vn', '-acodec', 'pcm_s16le', outputFile);
         const data = new Uint8Array(ffmpeg.FS('readFile', outputFile));
         const filenamePrefix = normalizeFilenamePrefix(prefixInput.value);
-        const filenameMiddlefix = normalizeFilenamePrefix(middlefixInput.value);
         prefixInput.value = filenamePrefix;
-        middlefixInput.value = filenameMiddlefix;
-        const outputFileName = `${filenamePrefix}${filenameMiddlefix}${selectedFile.name.replace(/\.[^/.]+$/, '')}.wav`;
+        const outputFileName = `${filenamePrefix}${selectedFile.name.replace(/\.[^/.]+$/, '')}.wav`;
         convertedFiles.push({ name: outputFileName, data });
         renderResults();
       } catch (error) {
@@ -348,7 +345,7 @@ async function convert() {
         failures.push({ file: selectedFile.name, detail: lastFfmpegMessage || 'Unsupported or unreadable audio' });
         const failedItem = document.createElement('div');
         failedItem.className = 'result-item result-item-failed';
-        failedItem.innerHTML = `<strong title="${selectedFile.name}">${selectedFile.name}</strong><span>Skipped</span>`;
+        failedItem.innerHTML = `<strong title="${selectedFile.name}">${selectedFile.name}</strong><span>${languageText?.skipped || 'Skipped'}</span>`;
         resultList.appendChild(failedItem);
       } finally {
         removeFfmpegFile(inputName);
@@ -365,29 +362,28 @@ async function convert() {
     await saveConvertedResults();
     conversionComplete = failures.length === 0 && convertedFiles.length === selectedFiles.length;
     downloadAllButton.disabled = !conversionComplete;
-    resultTitle.textContent = `${outputUrls.length} WAV file${outputUrls.length === 1 ? '' : 's'} ready${failures.length ? `, ${failures.length} skipped` : ''}`;
+    resultTitle.textContent = `${outputUrls.length} ${languageText?.wavFile || 'WAV file'} ${languageText?.ready || 'ready'}${failures.length ? `, ${failures.length} ${languageText?.skipped || 'skipped'}` : ''}`;
     progressBar.style.width = '100%';
     progressPercent.textContent = '100%';
-    progressLabel.textContent = failures.length ? 'Conversion complete with skipped files' : 'Conversion complete';
+    progressLabel.textContent = failures.length ? (languageText?.conversionCompleteSkipped || 'Conversion complete with skipped files') : (languageText?.conversionComplete || 'Conversion complete');
     result.classList.remove('is-hidden');
     window.dispatchEvent(new CustomEvent('wavecraft:converted', {
       detail: {
         files: convertedFiles.map(({ name, data }) => new File([data], name, { type: 'audio/wav' }))
       }
     }));
-    if (failures.length) showToast(`${failures.length} file${failures.length === 1 ? '' : 's'} could not be converted.`);
+    if (failures.length) showToast(`${failures.length} ${languageText?.files || 'file'}${failures.length === 1 ? '' : 's'} ${languageText?.couldNotConvert || 'could not be converted.'}`);
   } catch (error) {
     console.error(error);
-    progressLabel.textContent = 'Conversion failed';
-    showToast('No files could be converted. Check the selected audio files.');
+    progressLabel.textContent = languageText?.conversionFailed || 'Conversion failed';
+    showToast(languageText?.noFilesConverted || 'No files could be converted. Check the selected audio files.');
   } finally {
     convertButton.disabled = false;
     clearButton.disabled = false;
     filePickerButton.disabled = false;
     folderPickerButton.disabled = false;
     prefixInput.disabled = false;
-    middlefixInput.disabled = false;
-    buttonLabel.textContent = selectedFiles.length > 1 ? `Convert ${selectedFiles.length} files` : 'Convert to WAV';
+    buttonLabel.textContent = selectedFiles.length > 1 ? `${languageText?.convertToWav || 'Convert'} ${selectedFiles.length} ${languageText?.files || 'files'}` : (languageText?.convertToWav || 'Convert to WAV');
   }
 }
 
@@ -413,13 +409,12 @@ prefixInput.addEventListener('blur', () => {
 prefixInput.addEventListener('change', () => {
   prefixInput.value = normalizeFilenamePrefix(prefixInput.value);
 });
-middlefixInput.addEventListener('blur', () => {
-  middlefixInput.value = normalizeFilenamePrefix(middlefixInput.value);
-});
-middlefixInput.addEventListener('change', () => {
-  middlefixInput.value = normalizeFilenamePrefix(middlefixInput.value);
-});
 downloadAllButton.addEventListener('click', downloadAll);
+window.addEventListener('wavecraft:language', (event) => {
+  languageText = event.detail.translations;
+  updateQueue();
+  renderResults();
+});
 ['dragenter', 'dragover'].forEach((eventName) => dropZone.addEventListener(eventName, (event) => {
   event.preventDefault();
   dropZone.classList.add('dragging');

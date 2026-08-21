@@ -9,6 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="language.js"></script>
   <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js"></script>
   <style>
     :root {
@@ -26,13 +27,14 @@
     }
 
     * { box-sizing: border-box; }
+    @font-face { font-family: "Khmer OS Siemreap Local"; src: url("Khmer OS Siemreap Regular.ttf") format("truetype"); font-weight: 400; font-style: normal; font-display: swap; }
     body {
       margin: 0;
       color: var(--ink);
       background: var(--paper);
       font-family: "Space Grotesk", sans-serif;
     }
-    .shell { max-width: 1180px; margin: 0 auto; padding: 30px 42px 70px; display: flex; flex-direction: column; }
+    .shell { width: 100%; max-width: 1180px; min-height: 100vh; margin: 0 auto; padding: 30px 42px 70px; display: flex; flex-direction: column; }
     .topline { order: 0; }
     .converter { order: 1; }
     .hero { order: 2; }
@@ -43,6 +45,9 @@
     .nav-links { display: flex; gap: 8px; align-items: center; margin-left: auto; }
     .nav-link { padding: 8px 11px; color: var(--muted); text-decoration: none; font: 500 11px "DM Mono", monospace; }
     .nav-link:hover, .nav-link.active { color: var(--ink); background: var(--mint); }
+    .lang-toggle { display: inline-flex; gap: 5px; align-items: center; margin-left: 8px; padding: 8px 10px; border: 1px solid var(--line); color: var(--muted); background: transparent; font: 500 10px "DM Mono", monospace; cursor: pointer; }
+    .lang-toggle span[data-lang] { opacity: .55; }
+    .lang-toggle span[data-lang].active { color: var(--ink); opacity: 1; }
     .brand { display: flex; align-items: center; gap: 12px; font-weight: 700; letter-spacing: .03em; }
     .brand-mark { width: 38px; height: 38px; display: grid; place-items: center; color: white; background: var(--teal); border-radius: 10px; font-family: "Space Grotesk", sans-serif; font-weight: 800; }
     .privacy { color: var(--muted); font: 500 10px/1.4 "DM Mono", monospace; letter-spacing: .04em; text-transform: uppercase; }
@@ -116,8 +121,14 @@
     .converter .file-panel, .converter .result { display: grid; gap: 10px; margin-top: 12px; padding: 13px 14px; border: 1px solid #c5cfdf; border-radius: 8px; background: white; }.converter .file-panel { grid-template-columns: 1fr auto; }.converter .queue-heading { display: flex; gap: 10px; align-items: baseline; }.converter .queue-heading strong, .converter .queue-heading span, .converter .result-label { color: #66738a; font: 10px "DM Mono", monospace; letter-spacing: .08em; }.converter .queue-list, .converter .result-list { display: grid; gap: 6px; max-height: 170px; overflow-y: auto; padding: 0; margin: 0; list-style: none; }.converter .queue-item, .converter .result-item { display: flex; align-items: center; gap: 9px; min-width: 0; padding-top: 6px; border-top: 1px solid #dce5f3; }.converter .queue-item:before { content: "♪"; display: grid; place-items: center; flex: 0 0 23px; height: 23px; color: #dce8ff; background: #102a56; }.converter .file-details { display: grid; gap: 3px; flex: 1; min-width: 0; }.converter .queue-item strong, .converter .result-item strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 12px Arial, sans-serif; }.converter .queue-item span { color: #66738a; font: 10px "DM Mono", monospace; }.converter .remove-file, .converter .icon-button { border: 0; color: #66738a; background: transparent; cursor: pointer; }.converter .icon-button { grid-column: 2; grid-row: 1; font-size: 22px; }.converter .remove-file { font-size: 18px; }
     .converter .actions { display: flex; justify-content: space-between; align-items: end; gap: 20px; margin-top: 20px; }.converter .format-readout { display: grid; gap: 6px; }.converter .format-readout span { color: #66738a; font: 10px "DM Mono", monospace; letter-spacing: .08em; }.converter .format-readout strong { font: 12px "DM Mono", monospace; }.converter .format-readout i { color: #e74445; font-style: normal; }.converter .convert-button, .converter .download-button, .converter .download-all-button { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 12px 16px; border: 0; border-radius: 6px; color: white; background: #102a56; font: 700 12px Arial, sans-serif; cursor: pointer; text-decoration: none; }.converter .convert-button:hover:not(:disabled), .converter .download-button:hover, .converter .download-all-button:hover:not(:disabled) { background: #2457a8; }.converter .convert-button:disabled, .converter .download-all-button:disabled { cursor: not-allowed; opacity: .42; }.converter .arrow, .converter .download-button span, .converter .download-all-button span { color: #dce8ff; font-size: 17px; }.converter .progress-block { margin-top: 18px; }.converter .progress-heading { display: flex; justify-content: space-between; margin-bottom: 7px; color: #66738a; font: 10px "DM Mono", monospace; }.converter .progress-track { height: 5px; overflow: hidden; background: #dce5f3; border-radius: 99px; }.converter .progress-bar { width: 0; height: 100%; background: #e74445; transition: width .15s ease; }.converter .result-heading { display: flex; justify-content: space-between; align-items: center; gap: 15px; }.converter .result strong { display: block; margin-top: 4px; font-size: 15px; }.converter .result-item { justify-content: space-between; }.converter .result-item-failed { color: #b83237; }.converter .result-item-failed span { font: 10px "DM Mono", monospace; }
     .is-hidden { display: none !important; }
+    :lang(km) body { font-family: "Khmer OS Siemreap Local", "Khmer OS Siemreap", "Noto Sans Khmer", sans-serif; }
+    :lang(km) body *, :lang(km) body *::before, :lang(km) body *::after { font-family: "Khmer OS Siemreap Local", "Khmer OS Siemreap", "Noto Sans Khmer", sans-serif !important; }
+    body, body *, body *::before, body *::after { font-family: "Khmer OS Siemreap Local", "Khmer OS Siemreap", "Noto Sans Khmer", sans-serif !important; }
+    :lang(km) h1, :lang(km) h2 { line-height: 1.3 !important; letter-spacing: 0 !important; }
+    :lang(km) .hero h1 { font-size: clamp(36px, 5.8vw, 68px) !important; }
+    :lang(km) .intro { line-height: 1.9 !important; }
     @media (max-width: 720px) {
-      .shell { padding: 22px 20px 45px; }
+      .shell { padding: 22px 20px 20px; }
       .topline { min-height: 49px; margin-bottom: 0; }
       .privacy { display: none; }
       .hero { padding-top: 55px; }.picker { align-items: flex-start; flex-direction: column; padding: 24px; }
@@ -136,34 +147,34 @@
 <body>
   <main class="shell">
     <header class="topline">
-      <div class="nav-links"><a class="nav-link" href="index.html">Converter</a><a class="nav-link active" href="duration.html">Duration calculator</a></div>
+      <div class="nav-links"><a class="nav-link" href="index.html" data-i18n="converter">Converter</a><a class="nav-link active" href="duration.html" data-i18n="durationCalculator">Duration calculator</a><button class="lang-toggle" type="button" aria-label="Toggle language" aria-pressed="false"><span data-lang="en">EN</span><span>/</span><span data-lang="kh">KH</span></button></div>
     </header>
 
     <section class="hero">
-      <h1>Measure your audio library.</h1>
-      <p class="intro">Scan a folder to calculate the total duration of every WAV recording, including files in nested folders.</p>
+      <h1 data-i18n="durationTitle">Measure your audio library.</h1>
+      <p class="intro" data-i18n="durationLede">Scan a folder to calculate the total duration of every WAV recording, including files in nested folders.</p>
     </section>
 
     <section class="picker" aria-label="Choose a folder">
       <div class="picker-copy">
-        <span class="picker-title">Select your parent folder</span>
-        <span class="picker-note">Your files stay on this device. Nothing is sent anywhere.</span>
+        <span class="picker-title" data-i18n="selectFolder">Select your parent folder</span>
+        <span class="picker-note" data-i18n="privacyNote">Your files stay on this device. Nothing is sent anywhere.</span>
       </div>
-      <button class="button" id="choose-folder-button" type="button"><span aria-hidden="true">＋</span> Choose folder</button>
+      <button class="button" id="choose-folder-button" type="button"><span aria-hidden="true">＋</span> <span data-i18n="chooseFolder">Choose folder</span></button>
       <input id="folder-input" type="file" webkitdirectory directory multiple accept=".wav,audio/wav">
       <input id="file-input" type="file" multiple accept=".wav,audio/wav" hidden>
     </section>
 
-    <p id="status" class="status" role="status">Waiting for a folder.</p>
+    <p id="status" class="status" role="status" data-i18n="waitingFolder">Waiting for a folder.</p>
     <div id="progress-wrap" class="progress-wrap" aria-hidden="true"><div id="progress" class="progress"></div></div>
 
     <section class="metrics" aria-label="Audio summary">
-      <div class="metric"><span class="metric-label">Total duration</span><strong id="total" class="metric-value">00:00:00</strong></div>
-      <div class="metric"><span class="metric-label">Successful WAV files</span><strong id="file-count" class="metric-value">0</strong></div>
-      <div class="metric"><span class="metric-label">Unsuccessful files</span><strong id="failed-count" class="metric-value">0</strong></div>
-      <div class="metric"><span class="metric-label">Average</span><strong id="average" class="metric-value">00:00</strong></div>
-      <div class="metric"><span class="metric-label">Longest file</span><strong id="longest" class="metric-value">00:00</strong></div>
-      <div class="metric"><span class="metric-label">Total size</span><strong id="total-size" class="metric-value">0 B</strong></div>
+      <div class="metric"><span class="metric-label" data-i18n="totalDuration">Total duration</span><strong id="total" class="metric-value">00:00:00</strong></div>
+      <div class="metric"><span class="metric-label" data-i18n="successfulWav">Successful WAV files</span><strong id="file-count" class="metric-value">0</strong></div>
+      <div class="metric"><span class="metric-label" data-i18n="unsuccessfulFiles">Unsuccessful files</span><strong id="failed-count" class="metric-value">0</strong></div>
+      <div class="metric"><span class="metric-label" data-i18n="average">Average</span><strong id="average" class="metric-value">00:00</strong></div>
+      <div class="metric"><span class="metric-label" data-i18n="longestFile">Longest file</span><strong id="longest" class="metric-value">00:00</strong></div>
+      <div class="metric"><span class="metric-label" data-i18n="totalSize">Total size</span><strong id="total-size" class="metric-value">0 B</strong></div>
     </section>
 
     <section id="non-wav-panel" class="non-wav-panel" hidden aria-label="Non-WAV files">
@@ -175,14 +186,14 @@
     </section>
 
     <section class="table-wrap">
-      <div class="table-head"><h2 class="table-title">File ledger</h2><div><span id="result-count" class="count">No files scanned</span> <button id="export-button" class="export-button" type="button" disabled title="Export readable WAV results as CSV"><span aria-hidden="true">↓</span> Export CSV</button></div></div>
-      <div id="empty" class="empty">Choose a folder to see its WAV files here.</div>
+      <div class="table-head"><h2 class="table-title" data-i18n="fileLedger">File ledger</h2><div><span id="result-count" class="count" data-i18n="noFilesScanned">No files scanned</span> <button id="export-button" class="export-button" type="button" disabled title="Export readable WAV results as CSV"><span aria-hidden="true">↓</span> <span data-i18n="exportCsv">Export CSV</span></button></div></div>
+      <div id="empty" class="empty" data-i18n="emptyLedger">Choose a folder to see its WAV files here.</div>
       <table id="results" hidden>
-        <thead><tr><th>File</th><th>Duration</th></tr></thead>
+        <thead><tr><th data-i18n="fileHeader">File</th><th data-i18n="durationHeader">Duration</th></tr></thead>
         <tbody id="rows"></tbody>
       </table>
     </section>
-    <footer class="site-footer"><span class="footer-brand">AUDIO TOOLS</span><span class="footer-note">LOCAL PROCESSING <i>·</i> FFMPEG.WASM</span><span class="footer-year">2026</span></footer>
+    <footer class="site-footer"><span class="footer-brand" data-i18n="audioTools">AUDIO TOOLS</span><span class="footer-note" data-i18n="ffmpegLocal">LOCAL PROCESSING · FFMPEG.WASM</span><span class="footer-year">2026</span></footer>
   </main>
 
   <script>
@@ -210,6 +221,7 @@
     const nonWavList = document.querySelector('#non-wav-list');
     let scannedResults = [];
     let durationFfmpeg;
+    let durationTranslations;
     let selectedFolderName = 'Selected folder';
     const durationDatabaseName = 'wavecraft-duration-ledger';
     const durationStoreName = 'duration-ledger';
@@ -288,7 +300,7 @@
         path.textContent = displayLocation(item.location);
         nameCell.append(name, path);
         const durationCell = document.createElement('td');
-        durationCell.textContent = Number.isFinite(item.seconds) ? formatDuration(item.seconds) : 'Could not read';
+        durationCell.textContent = Number.isFinite(item.seconds) ? formatDuration(item.seconds) : (durationTranslations?.couldNotRead || 'Could not read');
         if (!Number.isFinite(item.seconds)) durationCell.className = 'error';
         row.append(nameCell, durationCell);
         rows.append(row);
@@ -300,8 +312,8 @@
       updateSummary(totalSeconds, successes, failedCount, snapshot.longestSeconds || 0, totalSize);
       renderNonWavFiles(nonWavFiles);
       if (successes) appendTotalRow(totalSeconds);
-      status.textContent = `Restored ${successes} readable WAV result${successes === 1 ? '' : 's'} from this browser.`;
-      resultCount.textContent = `${successes} readable of ${snapshot.fileCount || successes} WAV file${(snapshot.fileCount || successes) === 1 ? '' : 's'}`;
+      status.textContent = durationTranslations ? `${durationTranslations.restored} ${successes} ${durationTranslations.wavFile} ${successes === 1 ? durationTranslations.result : durationTranslations.results} ${durationTranslations.fromBrowser}.` : `Restored ${successes} readable WAV result${successes === 1 ? '' : 's'} from this browser.`;
+      resultCount.textContent = durationTranslations ? `${successes} ${durationTranslations.readableOf} ${snapshot.fileCount || successes} ${durationTranslations.wavFile}` : `${successes} readable of ${snapshot.fileCount || successes} WAV file${(snapshot.fileCount || successes) === 1 ? '' : 's'}`;
       exportButton.disabled = scannedResults.length === 0;
     }
 
@@ -322,7 +334,7 @@
     nonWavToggle.addEventListener('click', () => {
       const expanded = nonWavToggle.getAttribute('aria-expanded') === 'true';
       nonWavToggle.setAttribute('aria-expanded', String(!expanded));
-      nonWavToggle.firstChild.textContent = expanded ? 'Show non-WAV files (' : 'Hide non-WAV files (';
+      nonWavToggle.firstChild.textContent = `${expanded ? (durationTranslations?.hideNonWav || 'Hide non-WAV files') : (durationTranslations?.showNonWav || 'Show non-WAV files')} (`;
       nonWavList.hidden = expanded;
     });
     clearAllSavedDataOnReload()
@@ -344,8 +356,8 @@
       renderNonWavFiles(nonWavFiles);
 
       if (!wavFiles.length) {
-        status.textContent = 'No WAV files found in that folder.';
-        resultCount.textContent = 'No files scanned';
+        status.textContent = durationTranslations?.noWavFound || 'No WAV files found in that folder.';
+        resultCount.textContent = durationTranslations?.noFilesScanned || 'No files scanned';
         return;
       }
 
@@ -355,7 +367,7 @@
       let successes = 0;
       let failedWavCount = 0;
       let longest = { seconds: 0, name: '' };
-      status.textContent = `Reading ${wavFiles.length} WAV file${wavFiles.length === 1 ? '' : 's'}...`;
+      status.textContent = durationTranslations ? `${durationTranslations.reading} ${wavFiles.length} ${durationTranslations.wavFile}...` : `Reading ${wavFiles.length} WAV file${wavFiles.length === 1 ? '' : 's'}...`;
 
       for (const file of wavFiles) {
         const row = document.createElement('tr');
@@ -369,7 +381,7 @@
         path.textContent = file.webkitRelativePath || file.name;
         nameCell.append(name, path);
         const durationCell = document.createElement('td');
-        durationCell.textContent = 'Reading...';
+        durationCell.textContent = durationTranslations?.reading || 'Reading...';
         row.append(nameCell, durationCell);
         rows.append(row);
 
@@ -381,7 +393,7 @@
           scannedResults.push({ code: file.name, size: file.size, seconds, minutes: seconds / 60, by: '', location: getFolder(file.webkitRelativePath) || selectedFolderName });
           if (seconds > longest.seconds) longest = { seconds, name: file.name };
         } catch (error) {
-          durationCell.textContent = 'Could not read';
+          durationCell.textContent = durationTranslations?.couldNotRead || 'Could not read';
           durationCell.className = 'error';
           failedWavCount++;
           scannedResults.push({ code: file.name, size: file.size, seconds: null, minutes: null, by: '', location: getFolder(file.webkitRelativePath) || selectedFolderName });
@@ -392,8 +404,8 @@
       }
 
       if (scannedResults.length) appendTotalRow(totalSeconds);
-      status.textContent = failedWavCount ? `Finished with ${failedWavCount} unreadable file${failedWavCount === 1 ? '' : 's'}.` : 'Scan complete. All WAV files were read locally.';
-      resultCount.textContent = `${successes} readable of ${wavFiles.length} WAV file${wavFiles.length === 1 ? '' : 's'}`;
+      status.textContent = failedWavCount ? `${failedWavCount} ${durationTranslations?.unreadable || 'unreadable file'}${failedWavCount === 1 ? '' : 's'}.` : (durationTranslations?.scanComplete || 'Scan complete. All WAV files were read locally.');
+      resultCount.textContent = durationTranslations ? `${successes} ${durationTranslations.readableOf} ${wavFiles.length} ${durationTranslations.wavFile}` : `${successes} readable of ${wavFiles.length} WAV file${wavFiles.length === 1 ? '' : 's'}`;
       exportButton.disabled = scannedResults.length === 0;
       await saveDurationLedger({ results: scannedResults, totalSeconds, totalSize, longestSeconds: longest.seconds, fileCount: wavFiles.length, failedCount: failedWavCount + nonWavFiles.length, nonWavFiles: nonWavFiles.map(file => file.webkitRelativePath || file.name), folderName: selectedFolderName });
     }
@@ -412,7 +424,7 @@
       link.download = 'wav-duration-report.csv';
       link.click();
       URL.revokeObjectURL(url);
-      status.textContent = `Exported ${scannedResults.length} WAV file${scannedResults.length === 1 ? '' : 's'}.`;
+      status.textContent = durationTranslations ? `${durationTranslations.exported} ${scannedResults.length} ${durationTranslations.wavFile}.` : `Exported ${scannedResults.length} WAV file${scannedResults.length === 1 ? '' : 's'}.`;
     }
 
     function csvCell(value) {
@@ -547,7 +559,7 @@
       nonWavCountEl.textContent = files.length;
       const convertibleFiles = files.filter(file => file instanceof File && /\.(m4a|mp3)$/i.test(file.name));
       convertAllButton.hidden = convertibleFiles.length === 0;
-      convertAllButton.textContent = `Convert all ${convertibleFiles.length} to WAV`;
+      convertAllButton.textContent = `${durationTranslations?.convertAll || 'Convert all'} ${convertibleFiles.length} ${durationTranslations?.toWav || 'to WAV'}`;
       nonWavList.replaceChildren(...files.map(file => {
         const item = document.createElement('li');
         item.className = 'non-wav-item';
@@ -560,7 +572,7 @@
           const convertButton = document.createElement('button');
           convertButton.className = 'convert-file-button';
           convertButton.type = 'button';
-          convertButton.textContent = 'Convert to WAV';
+          convertButton.textContent = durationTranslations?.convertToWav || 'Convert to WAV';
           convertButton.addEventListener('click', () => convertNonWavFile(file, convertButton));
           item.append(convertButton);
         }
@@ -568,7 +580,22 @@
       }));
       nonWavList.hidden = true;
       nonWavToggle.setAttribute('aria-expanded', 'false');
-      nonWavToggle.firstChild.textContent = 'Show non-WAV files (';
+      nonWavToggle.firstChild.textContent = `${durationTranslations?.showNonWav || 'Show non-WAV files'} (`;
+    }
+
+    window.addEventListener('wavecraft:language', event => {
+      durationTranslations = event.detail.translations;
+      updateDurationLanguage(durationTranslations);
+    });
+
+    function updateDurationLanguage(translations) {
+      const expanded = nonWavToggle.getAttribute('aria-expanded') === 'true';
+      nonWavToggle.firstChild.textContent = `${expanded ? translations.hideNonWav : translations.showNonWav} (`;
+      if (!convertAllButton.hidden) convertAllButton.textContent = `${translations.convertAll} ${nonWavCountEl.textContent} ${translations.toWav}`;
+      if (status.textContent === 'Scan complete. All WAV files were read locally.') status.textContent = translations.scanComplete;
+      if (status.textContent === 'Waiting for a folder.') status.textContent = translations.waitingFolder;
+      if (status.textContent === 'No WAV files found in that folder.') status.textContent = translations.noWavFound;
+      if (resultCount.textContent === 'No files scanned') resultCount.textContent = translations.noFilesScanned;
     }
 
     async function convertAllNonWavFiles() {

@@ -1,4 +1,5 @@
 * { box-sizing: border-box; }
+@font-face { font-family: "Khmer OS Siemreap Local"; src: url("Khmer OS Siemreap Regular.ttf") format("truetype"); font-weight: 400; font-style: normal; font-display: swap; }
 :root { --paper: #f7f9fd; --ink: #102a56; --muted: #66738a; --line: #c5cfdf; --lime: #dce8ff; --orange: #e74445; }
 body { margin: 0; min-width: 320px; color: var(--ink); background: var(--paper); font-family: "Space Grotesk", sans-serif; }
 .shell { position: relative; max-width: 1160px; min-height: 100vh; margin: auto; padding: 30px 42px 24px; display: flex; flex-direction: column; }
@@ -27,11 +28,19 @@ h1 em { color: #3f65a0; font-style: normal; }
 footer { display: flex; justify-content: space-between; color: #89918b; margin-top: auto; padding-top: 75px; }.site-footer { align-items: center; gap: 20px; padding-top: 18px; border-top: 1px solid var(--line); font: 500 10px "DM Mono", monospace; letter-spacing: .1em; }.footer-brand { color: var(--ink); font-weight: 600; letter-spacing: .16em; }.footer-note { margin-inline: auto; }.footer-note i { color: var(--orange); font-style: normal; margin: 0 5px; }.footer-year { color: var(--muted); }.is-hidden { display: none; }.toast { position: fixed; left: 50%; bottom: 25px; transform: translate(-50%, 100px); padding: 12px 17px; background: var(--orange); color: var(--ink); font: 11px "DM Mono", monospace; transition: transform .25s; }.toast.show { transform: translate(-50%, 0); }
 @media (max-width: 640px) { .shell { padding: 22px 20px 20px; }.local-badge { font-size: 8px; }.intro { padding: 55px 0 38px; } h1 { font-size: 47px; }.drop-zone { min-height: 310px; flex-direction: column; gap: 24px; text-align: center; }.picker-actions { justify-content: center; }.actions { align-items: stretch; flex-direction: column; gap: 22px; }.convert-button { width: 100%; }.result-item { align-items: stretch; flex-direction: column; }.download-button { width: 100%; } footer { gap: 12px; flex-wrap: wrap; padding-top: 56px; font-size: 8px; }.footer-note { margin-inline: 0; } }
 
-.converter-page { max-width: 1160px; min-height: 100vh; margin: auto; padding: 30px 42px 24px; color: var(--ink); background: var(--paper); font-family: "Space Grotesk", sans-serif; }
+.converter-page { max-width: 1180px; min-height: 100vh; margin: auto; padding: 30px 42px 70px; color: var(--ink); background: var(--paper); font-family: "Space Grotesk", sans-serif; }
 .app-nav { display: flex; align-items: center; justify-content: space-between; padding-bottom: 20px; }
 .nav-brand { display: flex; align-items: center; gap: 10px; color: inherit; text-decoration: none; font: 600 13px "DM Mono", monospace; letter-spacing: .12em; }
 .nav-mark { display: grid; place-items: center; width: 29px; height: 29px; border: 1.5px solid var(--ink); font: 600 16px "Space Grotesk"; }
 .nav-links { display: flex; gap: 8px; margin-left: auto; }.nav-link { padding: 8px 11px; color: var(--muted); text-decoration: none; font: 500 11px "DM Mono", monospace; }.nav-link:hover, .nav-link.active { color: var(--ink); background: var(--lime); }
-.converter-hero { width: min(100%, 720px); margin-inline: auto; padding: 78px 0 54px; }.converter-hero h1 { margin: 0; font-size: clamp(42px, 6.5vw, 82px); line-height: .94; letter-spacing: -.04em; font-weight: 600; }.converter-hero h1 em { color: #3f65a0; font-style: normal; }.converter-hero .lede { max-width: 450px; color: var(--muted); line-height: 1.55; font-size: 15px; margin: 27px 0 0; }
-.converter-page .workspace { width: min(100%, 740px); margin-inline: auto; }.site-footer { display: flex; justify-content: space-between; color: var(--muted); margin-top: 75px; padding-top: 20px; font: 500 10px "DM Mono", monospace; letter-spacing: .13em; }
+.lang-toggle { display: inline-flex; gap: 5px; align-items: center; margin-left: 8px; padding: 8px 10px; border: 1px solid var(--line); color: var(--muted); background: transparent; font: 500 10px "DM Mono", monospace; cursor: pointer; }.lang-toggle span[data-lang] { opacity: .55; }.lang-toggle span[data-lang].active { color: var(--ink); opacity: 1; }
+.converter-hero { width: 100%; margin-inline: auto; padding: 78px 0 54px; }.converter-hero h1 { margin: 0; font-size: clamp(42px, 7vw, 76px); line-height: .98; letter-spacing: -.045em; font-weight: 600; }.converter-hero h1 em { color: #3f65a0; font-style: normal; }.converter-hero .lede { max-width: 570px; color: var(--muted); line-height: 1.6; font-size: 17px; margin: 27px 0 0; }
+.converter-page .workspace { width: 100%; margin-inline: auto; }.site-footer { display: flex; justify-content: space-between; color: var(--muted); margin-top: 75px; padding-top: 20px; font: 500 10px "DM Mono", monospace; letter-spacing: .13em; }
 @media (max-width: 640px) { .converter-page { padding: 22px 20px 20px; }.app-nav { align-items: flex-start; gap: 18px; flex-direction: column; }.converter-hero { padding: 55px 0 38px; }.converter-hero h1 { font-size: 47px; }.site-footer { gap: 12px; flex-wrap: wrap; font-size: 8px; } }
+
+:lang(km) body { font-family: "Khmer OS Siemreap Local", "Khmer OS Siemreap", "Noto Sans Khmer", sans-serif; }
+:lang(km) body *, :lang(km) body *::before, :lang(km) body *::after { font-family: "Khmer OS Siemreap Local", "Khmer OS Siemreap", "Noto Sans Khmer", sans-serif !important; }
+:root body, :root body *, :root body *::before, :root body *::after { font-family: "Khmer OS Siemreap Local", "Khmer OS Siemreap", "Noto Sans Khmer", sans-serif !important; }
+:lang(km) h1, :lang(km) h2 { line-height: 1.3 !important; letter-spacing: 0 !important; }
+:lang(km) .converter-hero h1 { font-size: clamp(36px, 5.8vw, 68px) !important; }
+:lang(km) .converter-hero .lede { line-height: 1.9 !important; }
