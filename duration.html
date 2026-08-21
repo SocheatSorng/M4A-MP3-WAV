@@ -177,6 +177,7 @@
     const rows = document.querySelector('#rows');
     const exportButton = document.querySelector('#export-button');
     let scannedResults = [];
+    let selectedFolderName = 'Selected folder';
     const durationDatabaseName = 'wavecraft-duration-ledger';
     const durationStoreName = 'duration-ledger';
 
@@ -232,6 +233,7 @@
 
     function renderStoredLedger(snapshot) {
       scannedResults = snapshot.results || [];
+      selectedFolderName = snapshot.folderName || selectedFolderName;
       const totalSeconds = snapshot.totalSeconds || 0;
       const successes = scannedResults.filter(item => Number.isFinite(item.seconds)).length;
       rows.replaceChildren();
@@ -244,7 +246,7 @@
         name.title = item.code;
         const path = document.createElement('div');
         path.className = 'file-path';
-        path.textContent = item.location || 'Selected folder';
+        path.textContent = displayLocation(item.location);
         nameCell.append(name, path);
         const durationCell = document.createElement('td');
         durationCell.textContent = Number.isFinite(item.seconds) ? formatDuration(item.seconds) : 'Could not read';
@@ -282,6 +284,7 @@
 
     async function scanFiles(files) {
       const wavFiles = files.filter(file => file.name.toLowerCase().endsWith('.wav'));
+      selectedFolderName = getSelectedFolderName(wavFiles) || 'Selected folder';
       scannedResults = [];
       exportButton.disabled = true;
       rows.replaceChildren();
@@ -324,12 +327,12 @@
           durationCell.textContent = formatDuration(seconds);
           totalSeconds += seconds;
           successes++;
-          scannedResults.push({ code: file.name, seconds, minutes: seconds / 60, by: '', location: getFolder(file.webkitRelativePath) });
+          scannedResults.push({ code: file.name, seconds, minutes: seconds / 60, by: '', location: getFolder(file.webkitRelativePath) || selectedFolderName });
           if (seconds > longest.seconds) longest = { seconds, name: file.name };
         } catch (error) {
           durationCell.textContent = 'Could not read';
           durationCell.className = 'error';
-          scannedResults.push({ code: file.name, seconds: null, minutes: null, by: '', location: getFolder(file.webkitRelativePath) });
+          scannedResults.push({ code: file.name, seconds: null, minutes: null, by: '', location: getFolder(file.webkitRelativePath) || selectedFolderName });
         }
         completed++;
         progress.style.width = `${Math.round(completed / wavFiles.length * 100)}%`;
@@ -341,15 +344,15 @@
       status.textContent = failed ? `Finished with ${failed} unreadable file${failed === 1 ? '' : 's'}.` : 'Scan complete. All WAV files were read locally.';
       resultCount.textContent = `${successes} readable of ${wavFiles.length} WAV file${wavFiles.length === 1 ? '' : 's'}`;
       exportButton.disabled = scannedResults.length === 0;
-      await saveDurationLedger({ results: scannedResults, totalSeconds, longestSeconds: longest.seconds, fileCount: wavFiles.length });
+      await saveDurationLedger({ results: scannedResults, totalSeconds, longestSeconds: longest.seconds, fileCount: wavFiles.length, folderName: selectedFolderName });
     }
 
     function exportCsv() {
       if (!scannedResults.length) return;
       const readableResults = scannedResults.filter(item => Number.isFinite(item.seconds));
       const totalSeconds = readableResults.reduce((sum, item) => sum + item.seconds, 0);
-      const headers = ['No.', 'Code', 'RT (Second)', 'RT (Minute)', 'RT (Hour)', 'By'];
-      const lines = [headers, ...scannedResults.map((item, index) => [index + 1, item.code, Number.isFinite(item.seconds) ? item.seconds.toFixed(3) : 'Could not read', Number.isFinite(item.seconds) ? item.minutes.toFixed(3) : 'Could not read', Number.isFinite(item.seconds) ? formatDecimalHours(item.seconds) : 'Could not read', item.by]), ['', 'TOTAL DURATION', totalSeconds.toFixed(3), (totalSeconds / 60).toFixed(3), formatDecimalHours(totalSeconds), ''], ['', 'ESTIMATED DURATION', Math.round(totalSeconds), formatMinuteDuration(totalSeconds), formatHourDuration(totalSeconds), '']];
+      const headers = ['No.', 'Location', 'Code', 'RT (Second)', 'RT (Minute)', 'RT (Hour)', 'By'];
+      const lines = [headers, ...scannedResults.map((item, index) => [index + 1, displayLocation(item.location), item.code, Number.isFinite(item.seconds) ? item.seconds.toFixed(3) : 'Could not read', Number.isFinite(item.seconds) ? item.minutes.toFixed(3) : 'Could not read', Number.isFinite(item.seconds) ? formatDecimalHours(item.seconds) : 'Could not read', item.by]), ['', '', 'TOTAL DURATION', totalSeconds.toFixed(3), (totalSeconds / 60).toFixed(3), formatDecimalHours(totalSeconds), ''], ['', '', 'ESTIMATED DURATION', '', '', formatHourDuration(totalSeconds), '']];
       const csv = '\ufeff' + lines.map(line => line.map(csvCell).join(',')).join('\r\n');
       const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
       const url = URL.createObjectURL(blob);
@@ -455,9 +458,18 @@
     }
 
     function getFolder(path) {
-      if (!path) return 'Selected folder';
+      if (!path) return '';
       const parts = path.split('/');
-      return parts.length > 2 ? parts.slice(1, -1).join('/') : 'Selected folder';
+      return parts.length > 1 ? parts.slice(0, -1).join('/') : '';
+    }
+
+    function getSelectedFolderName(files) {
+      const relativePath = files.find(file => file.webkitRelativePath)?.webkitRelativePath;
+      return relativePath ? relativePath.split('/')[0] : '';
+    }
+
+    function displayLocation(location) {
+      return location && location !== 'Selected folder' ? location : selectedFolderName;
     }
 
     function formatDuration(seconds) {
