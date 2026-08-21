@@ -36,6 +36,7 @@
     .converter { order: 1; }
     .hero { order: 2; }
     .picker { order: 3; }
+    .non-wav-panel { order: 3; }
     .status, .progress-wrap, .metrics, .table-wrap { order: 4; }
     .topline { display: flex; justify-content: space-between; gap: 18px; align-items: center; min-height: 49px; margin-bottom: 0; padding-bottom: 20px; }
     .nav-links { display: flex; gap: 8px; align-items: center; margin-left: auto; }
@@ -59,11 +60,16 @@
     .status { min-height: 26px; margin: 19px 0 24px; color: var(--muted); font: 400 13px "Space Grotesk", sans-serif; }
     .progress-wrap { display: none; height: 5px; margin-top: -17px; margin-bottom: 22px; background: #dce5f3; border-radius: 99px; overflow: hidden; }
     .progress { width: 0; height: 100%; background: var(--teal); transition: width .15s ease; }
-    .metrics { display: grid; grid-template-columns: 1.25fr repeat(3, 1fr); gap: 12px; margin-bottom: 28px; }
+    .metrics { display: grid; grid-template-columns: 1.25fr repeat(5, 1fr); gap: 12px; margin-bottom: 18px; }
     .metric { padding: 21px 20px 18px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; }
     .metric:first-child { background: var(--teal); color: white; border-color: var(--teal); }
     .metric-label { display: block; margin-bottom: 10px; font: 500 10px "DM Mono", monospace; letter-spacing: .09em; text-transform: uppercase; opacity: .72; }
     .metric-value { display: block; font-size: 30px; line-height: 1; white-space: nowrap; }
+    .non-wav-panel { margin-bottom: 28px; padding: 15px 20px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; }
+    .non-wav-toggle { display: inline-flex; align-items: center; gap: 8px; padding: 0; border: 0; color: var(--teal-dark); background: transparent; font: 600 12px "Space Grotesk", sans-serif; cursor: pointer; }
+    .non-wav-toggle:hover { color: var(--teal); }
+    .non-wav-list { display: grid; gap: 6px; margin: 14px 0 0; padding: 14px 0 0 18px; border-top: 1px solid var(--line); color: var(--muted); font: 400 12px/1.4 "DM Mono", monospace; }
+    .non-wav-list[hidden] { display: none; }
     .table-wrap { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
     .table-head { display: flex; align-items: center; justify-content: space-between; gap: 15px; padding: 18px 21px; border-bottom: 1px solid var(--line); }
     .table-title { margin: 0; font-size: 22px; font-weight: 500; }
@@ -144,9 +150,16 @@
 
     <section class="metrics" aria-label="Audio summary">
       <div class="metric"><span class="metric-label">Total duration</span><strong id="total" class="metric-value">00:00:00</strong></div>
-      <div class="metric"><span class="metric-label">WAV files</span><strong id="file-count" class="metric-value">0</strong></div>
+      <div class="metric"><span class="metric-label">Successful WAV files</span><strong id="file-count" class="metric-value">0</strong></div>
+      <div class="metric"><span class="metric-label">Unsuccessful WAV files</span><strong id="failed-count" class="metric-value">0</strong></div>
       <div class="metric"><span class="metric-label">Average</span><strong id="average" class="metric-value">00:00</strong></div>
       <div class="metric"><span class="metric-label">Longest file</span><strong id="longest" class="metric-value">00:00</strong></div>
+      <div class="metric"><span class="metric-label">Total size</span><strong id="total-size" class="metric-value">0 B</strong></div>
+    </section>
+
+    <section id="non-wav-panel" class="non-wav-panel" hidden aria-label="Non-WAV files">
+      <button id="non-wav-toggle" class="non-wav-toggle" type="button" aria-expanded="false" aria-controls="non-wav-list">Show non-WAV files (<span id="non-wav-count">0</span>)</button>
+      <ul id="non-wav-list" class="non-wav-list" hidden></ul>
     </section>
 
     <section class="table-wrap">
@@ -169,13 +182,19 @@
     const progress = document.querySelector('#progress');
     const totalEl = document.querySelector('#total');
     const countEl = document.querySelector('#file-count');
+    const failedCountEl = document.querySelector('#failed-count');
     const averageEl = document.querySelector('#average');
     const longestEl = document.querySelector('#longest');
+    const totalSizeEl = document.querySelector('#total-size');
     const resultCount = document.querySelector('#result-count');
     const empty = document.querySelector('#empty');
     const results = document.querySelector('#results');
     const rows = document.querySelector('#rows');
     const exportButton = document.querySelector('#export-button');
+    const nonWavPanel = document.querySelector('#non-wav-panel');
+    const nonWavToggle = document.querySelector('#non-wav-toggle');
+    const nonWavCountEl = document.querySelector('#non-wav-count');
+    const nonWavList = document.querySelector('#non-wav-list');
     let scannedResults = [];
     let selectedFolderName = 'Selected folder';
     const durationDatabaseName = 'wavecraft-duration-ledger';
@@ -235,7 +254,10 @@
       scannedResults = snapshot.results || [];
       selectedFolderName = snapshot.folderName || selectedFolderName;
       const totalSeconds = snapshot.totalSeconds || 0;
+      const totalSize = snapshot.totalSize ?? scannedResults.reduce((sum, item) => sum + (item.size || 0), 0);
       const successes = scannedResults.filter(item => Number.isFinite(item.seconds)).length;
+      const fileCount = snapshot.fileCount || scannedResults.length;
+      const nonWavFiles = snapshot.nonWavFiles || [];
       rows.replaceChildren();
       scannedResults.forEach(item => {
         const row = document.createElement('tr');
@@ -258,7 +280,8 @@
       results.hidden = successes === 0;
       progressWrap.style.display = successes ? 'block' : 'none';
       progress.style.width = '100%';
-      updateSummary(totalSeconds, successes, snapshot.longestSeconds || 0);
+      updateSummary(totalSeconds, successes, fileCount - successes, snapshot.longestSeconds || 0, totalSize);
+      renderNonWavFiles(nonWavFiles);
       if (successes) appendTotalRow(totalSeconds);
       status.textContent = `Restored ${successes} readable WAV result${successes === 1 ? '' : 's'} from this browser.`;
       resultCount.textContent = `${successes} readable of ${snapshot.fileCount || successes} WAV file${(snapshot.fileCount || successes) === 1 ? '' : 's'}`;
@@ -278,12 +301,19 @@
     fileInput.addEventListener('change', () => scanFiles([...fileInput.files]));
     window.addEventListener('wavecraft:converted', event => scanFiles(event.detail.files));
     exportButton.addEventListener('click', exportCsv);
+    nonWavToggle.addEventListener('click', () => {
+      const expanded = nonWavToggle.getAttribute('aria-expanded') === 'true';
+      nonWavToggle.setAttribute('aria-expanded', String(!expanded));
+      nonWavToggle.firstChild.textContent = expanded ? 'Show non-WAV files (' : 'Hide non-WAV files (';
+      nonWavList.hidden = expanded;
+    });
     clearAllSavedDataOnReload()
       .then(() => restoreDurationLedger())
       .catch(error => console.warn('Could not initialize duration ledger', error));
 
     async function scanFiles(files) {
       const wavFiles = files.filter(file => file.name.toLowerCase().endsWith('.wav'));
+      const nonWavFiles = files.filter(file => !file.name.toLowerCase().endsWith('.wav')).map(file => file.webkitRelativePath || file.name);
       selectedFolderName = getSelectedFolderName(wavFiles) || 'Selected folder';
       scannedResults = [];
       exportButton.disabled = true;
@@ -293,6 +323,7 @@
       progressWrap.style.display = wavFiles.length ? 'block' : 'none';
       progress.style.width = '0%';
       resetSummary();
+      renderNonWavFiles(nonWavFiles);
 
       if (!wavFiles.length) {
         status.textContent = 'No WAV files found in that folder.';
@@ -301,6 +332,7 @@
       }
 
       let totalSeconds = 0;
+      let totalSize = wavFiles.reduce((sum, file) => sum + file.size, 0);
       let completed = 0;
       let successes = 0;
       let longest = { seconds: 0, name: '' };
@@ -327,16 +359,16 @@
           durationCell.textContent = formatDuration(seconds);
           totalSeconds += seconds;
           successes++;
-          scannedResults.push({ code: file.name, seconds, minutes: seconds / 60, by: '', location: getFolder(file.webkitRelativePath) || selectedFolderName });
+          scannedResults.push({ code: file.name, size: file.size, seconds, minutes: seconds / 60, by: '', location: getFolder(file.webkitRelativePath) || selectedFolderName });
           if (seconds > longest.seconds) longest = { seconds, name: file.name };
         } catch (error) {
           durationCell.textContent = 'Could not read';
           durationCell.className = 'error';
-          scannedResults.push({ code: file.name, seconds: null, minutes: null, by: '', location: getFolder(file.webkitRelativePath) || selectedFolderName });
+          scannedResults.push({ code: file.name, size: file.size, seconds: null, minutes: null, by: '', location: getFolder(file.webkitRelativePath) || selectedFolderName });
         }
         completed++;
         progress.style.width = `${Math.round(completed / wavFiles.length * 100)}%`;
-        updateSummary(totalSeconds, successes, longest.seconds);
+        updateSummary(totalSeconds, successes, completed - successes, longest.seconds, totalSize);
       }
 
       const failed = wavFiles.length - successes;
@@ -344,7 +376,7 @@
       status.textContent = failed ? `Finished with ${failed} unreadable file${failed === 1 ? '' : 's'}.` : 'Scan complete. All WAV files were read locally.';
       resultCount.textContent = `${successes} readable of ${wavFiles.length} WAV file${wavFiles.length === 1 ? '' : 's'}`;
       exportButton.disabled = scannedResults.length === 0;
-      await saveDurationLedger({ results: scannedResults, totalSeconds, longestSeconds: longest.seconds, fileCount: wavFiles.length, folderName: selectedFolderName });
+      await saveDurationLedger({ results: scannedResults, totalSeconds, totalSize, longestSeconds: longest.seconds, fileCount: wavFiles.length, nonWavFiles, folderName: selectedFolderName });
     }
 
     function exportCsv() {
@@ -481,12 +513,35 @@
       return hours ? `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}` : `${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
     }
 
-    function resetSummary() { updateSummary(0, 0, 0); }
-    function updateSummary(total, count, longest) {
+    function resetSummary() { updateSummary(0, 0, 0, 0); }
+    function updateSummary(total, count, failedCount, longest, totalSize = 0) {
       totalEl.textContent = formatDuration(total);
       countEl.textContent = count;
+      failedCountEl.textContent = failedCount;
       averageEl.textContent = formatDuration(count ? total / count : 0);
       longestEl.textContent = formatDuration(longest);
+      totalSizeEl.textContent = formatBytes(totalSize);
+    }
+
+    function renderNonWavFiles(files) {
+      nonWavPanel.hidden = files.length === 0;
+      nonWavCountEl.textContent = files.length;
+      nonWavList.replaceChildren(...files.map(file => {
+        const item = document.createElement('li');
+        item.textContent = file;
+        return item;
+      }));
+      nonWavList.hidden = true;
+      nonWavToggle.setAttribute('aria-expanded', 'false');
+      nonWavToggle.firstChild.textContent = 'Show non-WAV files (';
+    }
+
+    function formatBytes(bytes) {
+      if (!Number.isFinite(bytes) || bytes <= 0) return '0 B';
+      const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+      const unitIndex = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
+      const value = bytes / (1024 ** unitIndex);
+      return `${value >= 10 || unitIndex === 0 ? value.toFixed(0) : value.toFixed(1)} ${units[unitIndex]}`;
     }
   </script>
 </body>
