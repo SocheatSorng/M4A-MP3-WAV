@@ -44,10 +44,10 @@
     .brand { display: flex; align-items: center; gap: 12px; font-weight: 700; letter-spacing: .03em; }
     .brand-mark { width: 38px; height: 38px; display: grid; place-items: center; color: white; background: var(--teal); border-radius: 10px; font-family: "Space Grotesk", sans-serif; font-weight: 800; }
     .privacy { color: var(--muted); font: 500 10px/1.4 "DM Mono", monospace; letter-spacing: .04em; text-transform: uppercase; }
-    .hero { max-width: 740px; padding-top: 78px; margin-bottom: 34px; }
+    .hero { width: min(100%, 740px); margin-inline: auto; padding-top: 78px; margin-bottom: 34px; }
     h1 { margin: 0 0 17px; font-size: clamp(42px, 7vw, 76px); line-height: .98; font-weight: 600; letter-spacing: -.045em; }
     .intro { max-width: 570px; margin: 0; color: var(--muted); font: 400 17px/1.6 "Space Grotesk", sans-serif; }
-    .picker { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 22px; min-height: 138px; padding: 27px 31px; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow); overflow: hidden; }
+    .picker { width: min(100%, 740px); margin-inline: auto; position: relative; display: flex; align-items: center; justify-content: space-between; gap: 22px; min-height: 138px; padding: 27px 31px; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow); overflow: hidden; }
     .picker::after { content: ""; position: absolute; width: 180px; height: 180px; right: -55px; top: -78px; border: 1px solid var(--mint); border-radius: 50%; pointer-events: none; }
     .picker-copy { position: relative; z-index: 1; }
     .picker-title { display: block; margin-bottom: 6px; font-size: 24px; }
