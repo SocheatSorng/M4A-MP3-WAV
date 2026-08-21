@@ -133,8 +133,9 @@
         <span class="picker-title">Select your parent folder</span>
         <span class="picker-note">Your files stay on this device. Nothing is sent anywhere.</span>
       </div>
-      <label class="button" for="folder-input"><span aria-hidden="true">＋</span> Choose folder</label>
+      <button class="button" id="choose-folder-button" type="button"><span aria-hidden="true">＋</span> Choose folder</button>
       <input id="folder-input" type="file" webkitdirectory directory multiple accept=".wav,audio/wav">
+      <input id="file-input" type="file" multiple accept=".wav,audio/wav" hidden>
     </section>
 
     <p id="status" class="status" role="status">Waiting for a folder.</p>
@@ -160,6 +161,8 @@
 
   <script>
     const folderInput = document.querySelector('#folder-input');
+    const fileInput = document.querySelector('#file-input');
+    const chooseFolderButton = document.querySelector('#choose-folder-button');
     const status = document.querySelector('#status');
     const progressWrap = document.querySelector('#progress-wrap');
     const progress = document.querySelector('#progress');
@@ -259,7 +262,17 @@
       exportButton.disabled = scannedResults.length === 0;
     }
 
+    const isAppleMobile = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    chooseFolderButton.addEventListener('click', () => {
+      if (isAppleMobile) {
+        status.textContent = 'Select one or more WAV files from the Files app.';
+        fileInput.click();
+        return;
+      }
+      folderInput.click();
+    });
     folderInput.addEventListener('change', () => scanFiles([...folderInput.files]));
+    fileInput.addEventListener('change', () => scanFiles([...fileInput.files]));
     window.addEventListener('wavecraft:converted', event => scanFiles(event.detail.files));
     exportButton.addEventListener('click', exportCsv);
     clearAllSavedDataOnReload()
