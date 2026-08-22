@@ -3,8 +3,10 @@
     en: {
       converter: 'Converter',
       durationCalculator: 'Duration calculator',
+      iosGuideNavigation: 'Guide page',
       converterPageTitle: 'M4A and MP3 to WAV',
       durationPageTitle: 'WAV Duration Ledger',
+      iosGuidePageTitle: 'iPhone Voice Memos Guide',
       toggleLanguage: 'Toggle language',
       audioConverter: 'Audio converter',
       converterTitle: 'Convert audio for every workflow.',
@@ -49,6 +51,19 @@
       iosGuideButton: 'Choose from Files',
       iosGuideStepOne: '1. Tap Share',
       iosGuideStepTwo: '2. Choose Save to Files',
+      iosGuideSteps: 'iPhone Voice Memos steps',
+      iosGuideStepOneText: 'Open the recording in Voice Memos and tap Share.',
+      iosGuideStepTwoText: 'Save the audio in a folder you can find from Files.',
+      iosGuideStepThree: '3. Create a new folder',
+      iosGuideStepThreeText: 'Tap New Folder in the Files save screen.',
+      iosGuideStepFour: '4. Name a folder',
+      iosGuideStepFourText: 'Enter a name for the new folder.',
+      iosGuideStepFive: '5. Open that folder',
+      iosGuideStepFiveText: 'Tap the folder you just created.',
+      iosGuideStepSix: '6. Save the audio in that folder',
+      iosGuideStepSixText: 'Tap Save to finish saving the recording there.',
+      iosGuideReady: 'When the recording is saved, choose it here.',
+      iosGuideBack: 'Back to converter',
       openingConverter: 'Opening converter...',
       clearFiles: 'Remove selected files',
       audioTools: 'AUDIO TOOLS',
@@ -92,8 +107,10 @@
     kh: {
       converter: 'កម្មវិធីបម្លែង',
       durationCalculator: 'គណនារយៈពេល',
+      iosGuideNavigation: 'ទំព័រមគ្គុទ្ទេសក៍',
       converterPageTitle: 'M4A និង MP3 ទៅ WAV',
       durationPageTitle: 'បញ្ជីរយៈពេល WAV',
+      iosGuidePageTitle: 'មគ្គុទ្ទេសក៍ Voice Memos លើ iPhone',
       toggleLanguage: 'ប្តូរភាសា',
       audioConverter: 'កម្មវិធីបម្លែងសំឡេង',
       converterTitle: 'បម្លែងសំឡេងសម្រាប់ការងាររបស់អ្នក។',
@@ -138,6 +155,19 @@
       iosGuideButton: 'ជ្រើសពី Files',
       iosGuideStepOne: '១. ចុច Share',
       iosGuideStepTwo: '២. ជ្រើស Save to Files',
+      iosGuideSteps: 'ជំហាន Voice Memos លើ iPhone',
+      iosGuideStepOneText: 'បើកការថតសំឡេងក្នុង Voice Memos ហើយចុច Share។',
+      iosGuideStepTwoText: 'រក្សាទុកសំឡេងក្នុងថតដែលអ្នកអាចរកឃើញតាម Files។',
+      iosGuideStepThree: '៣. បង្កើតថតថ្មី',
+      iosGuideStepThreeText: 'ចុច New Folder នៅលើអេក្រង់រក្សាទុកក្នុង Files។',
+      iosGuideStepFour: '៤. ដាក់ឈ្មោះថត',
+      iosGuideStepFourText: 'បញ្ចូលឈ្មោះសម្រាប់ថតថ្មី។',
+      iosGuideStepFive: '៥. បើកថតនោះ',
+      iosGuideStepFiveText: 'ចុចថតដែលអ្នកទើបតែបង្កើត។',
+      iosGuideStepSix: '៦. រក្សាទុកសំឡេងក្នុងថតនោះ',
+      iosGuideStepSixText: 'ចុច Save ដើម្បីបញ្ចប់ការរក្សាទុកការថតសំឡេងនៅទីនោះ។',
+      iosGuideReady: 'នៅពេលរក្សាទុករួច សូមជ្រើសឯកសារនៅទីនេះ។',
+      iosGuideBack: 'ត្រឡប់ទៅកម្មវិធីបម្លែង',
       openingConverter: 'កំពុងបើកកម្មវិធីបម្លែង...',
       clearFiles: 'លុបឯកសារដែលបានជ្រើស',
       audioTools: 'ឧបករណ៍សំឡេង',
@@ -183,7 +213,7 @@
   function applyLanguage(language) {
     const selectedLanguage = language === 'kh' ? 'kh' : 'en';
     document.documentElement.lang = selectedLanguage === 'kh' ? 'km' : 'en';
-    const pageTitleKey = location.pathname.endsWith('duration.html') ? 'durationPageTitle' : 'converterPageTitle';
+    const pageTitleKey = location.pathname.endsWith('duration.html') ? 'durationPageTitle' : location.pathname.endsWith('ios-guide.html') ? 'iosGuidePageTitle' : 'converterPageTitle';
     document.title = translations[selectedLanguage][pageTitleKey];
     document.querySelectorAll('[data-i18n]').forEach((element) => {
       const value = translations[selectedLanguage][element.dataset.i18n];

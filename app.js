@@ -5,8 +5,6 @@ const dropZone = document.querySelector('#dropZone');
 const folderInput = document.querySelector('#folderInput');
 const fileInput = document.querySelector('#fileInput');
 const folderPickerButton = document.querySelector('#folderPickerButton');
-const iosGuide = document.querySelector('#iosGuide');
-const iosGuideButton = document.querySelector('#iosGuideButton');
 const unsupportedPanel = document.querySelector('#unsupportedPanel');
 const unsupportedMessage = document.querySelector('#unsupportedMessage');
 const unsupportedToggle = document.querySelector('#unsupportedToggle');
@@ -296,9 +294,7 @@ function clearFile() {
 async function chooseFolder() {
   const isAppleMobile = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   if (isAppleMobile) {
-    fileInput.removeAttribute('accept');
-    iosGuide.classList.remove('is-hidden');
-    iosGuide.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    fileInput.click();
     return;
   }
   if (typeof window.showDirectoryPicker === 'function') {
@@ -466,7 +462,6 @@ folderPickerButton.addEventListener('click', (event) => {
 });
 folderInput.addEventListener('change', (event) => { selectFiles(event.target.files); folderInput.value = ''; });
 fileInput.addEventListener('change', (event) => { selectFiles(event.target.files); fileInput.value = ''; });
-iosGuideButton.addEventListener('click', () => fileInput.click());
 clearButton.addEventListener('click', clearFile);
 convertButton.addEventListener('click', convert);
 prefixInput.addEventListener('blur', () => {
