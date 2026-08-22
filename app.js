@@ -35,6 +35,7 @@ let convertedFiles = [];
 let conversionIndex = 0;
 let conversionTotal = 1;
 let conversionComplete = false;
+let conversionInProgress = false;
 let languageText = null;
 let unsupportedFiles = [];
 let lastFfmpegMessage = '';
@@ -136,16 +137,17 @@ function renderResults() {
     outputUrls.push(outputUrl);
     const resultItem = document.createElement('div');
     resultItem.className = 'result-item';
-    resultItem.innerHTML = `<strong title="${name}">${name}</strong><a class="download-button" href="${outputUrl}" download="${name}">${languageText?.download || 'Download'} <span>↓</span></a>`;
+    resultItem.innerHTML = `<strong title="${name}">${name}</strong><a class="download-button" href="${outputUrl}" download="${name}"${conversionComplete ? '' : ' hidden'}>${languageText?.download || 'Download'} <span>↓</span></a>`;
     resultList.appendChild(resultItem);
   });
-  if (convertedFiles.length) {
+  if (convertedFiles.length && conversionComplete && !conversionInProgress) {
     resultTitle.textContent = `${convertedFiles.length} WAV file${convertedFiles.length === 1 ? '' : 's'} ${languageText?.ready || 'ready'}`;
     result.classList.remove('is-hidden');
   } else {
     result.classList.add('is-hidden');
   }
   downloadAllButton.disabled = !conversionComplete;
+  downloadAllButton.hidden = !conversionComplete;
 }
 
 function createFfmpeg() {
@@ -343,6 +345,7 @@ async function downloadAll() {
 
 async function convert() {
   if (!selectedFiles.length) return;
+  conversionInProgress = true;
   conversionComplete = false;
   convertButton.disabled = true;
   clearButton.disabled = true;
@@ -408,12 +411,14 @@ async function convert() {
     if (!outputUrls.length) throw new Error('No files could be converted.');
     await saveConvertedResults();
     conversionComplete = failures.length === 0 && convertedFiles.length === selectedFiles.length;
+    conversionInProgress = false;
+    renderResults();
     downloadAllButton.disabled = !conversionComplete;
+    downloadAllButton.hidden = !conversionComplete;
     resultTitle.textContent = `${outputUrls.length} ${languageText?.wavFile || 'WAV file'} ${languageText?.ready || 'ready'}${failures.length ? `, ${failures.length} ${languageText?.skipped || 'skipped'}` : ''}`;
     progressBar.style.width = '100%';
     progressPercent.textContent = '100%';
     progressLabel.textContent = failures.length ? (languageText?.conversionCompleteSkipped || 'Conversion complete with skipped files') : (languageText?.conversionComplete || 'Conversion complete');
-    result.classList.remove('is-hidden');
     window.dispatchEvent(new CustomEvent('wavecraft:converted', {
       detail: {
         files: convertedFiles.map(({ name, data }) => new File([data], name, { type: 'audio/wav' }))
@@ -425,6 +430,7 @@ async function convert() {
     progressLabel.textContent = languageText?.conversionFailed || 'Conversion failed';
     showToast(languageText?.noFilesConverted || 'No files could be converted. Check the selected audio files.');
   } finally {
+    conversionInProgress = false;
     convertButton.disabled = false;
     clearButton.disabled = false;
     folderPickerButton.disabled = false;
