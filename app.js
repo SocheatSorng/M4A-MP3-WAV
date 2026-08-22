@@ -3,6 +3,7 @@ const { createFFmpeg, fetchFile } = FFmpeg;
 
 const dropZone = document.querySelector('#dropZone');
 const folderInput = document.querySelector('#folderInput');
+const fileInput = document.querySelector('#fileInput');
 const folderPickerButton = document.querySelector('#folderPickerButton');
 const unsupportedPanel = document.querySelector('#unsupportedPanel');
 const unsupportedMessage = document.querySelector('#unsupportedMessage');
@@ -291,6 +292,12 @@ function clearFile() {
 }
 
 async function chooseFolder() {
+  const isAppleMobile = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  if (isAppleMobile) {
+    showToast(languageText?.selectAudioFilesFromFiles || 'Select one or more M4A or MP3 files from the Files app.');
+    fileInput.click();
+    return;
+  }
   if (typeof window.showDirectoryPicker === 'function') {
     try {
       const directoryHandle = await window.showDirectoryPicker({ mode: 'read' });
@@ -455,6 +462,7 @@ folderPickerButton.addEventListener('click', (event) => {
   chooseFolder();
 });
 folderInput.addEventListener('change', (event) => { selectFiles(event.target.files); folderInput.value = ''; });
+fileInput.addEventListener('change', (event) => { selectFiles(event.target.files); fileInput.value = ''; });
 clearButton.addEventListener('click', clearFile);
 convertButton.addEventListener('click', convert);
 prefixInput.addEventListener('blur', () => {
