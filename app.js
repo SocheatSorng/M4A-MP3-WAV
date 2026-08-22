@@ -294,7 +294,8 @@ function clearFile() {
 async function chooseFolder() {
   const isAppleMobile = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   if (isAppleMobile) {
-    showToast(languageText?.selectAudioFilesFromFiles || 'Select one or more M4A or MP3 files from the Files app.');
+    fileInput.removeAttribute('accept');
+    showToast(languageText?.selectAudioFilesFromFiles || 'In Voice Memos, use Share > Save to Files, then select the M4A or MP3 file here.');
     fileInput.click();
     return;
   }
