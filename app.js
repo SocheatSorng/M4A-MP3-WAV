@@ -294,6 +294,7 @@ function clearFile() {
 async function chooseFolder() {
   const isAppleMobile = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   if (isAppleMobile) {
+    fileInput.setAttribute('accept', '.m4a,.mp3');
     fileInput.click();
     return;
   }
