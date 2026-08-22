@@ -29,13 +29,17 @@ footer { display: flex; justify-content: space-between; color: #89918b; margin-t
 @media (max-width: 640px) { .shell { padding: 22px 20px 20px; }.local-badge { font-size: 8px; }.intro { padding: 55px 0 38px; } h1 { font-size: 47px; }.drop-zone { min-height: 310px; flex-direction: column; gap: 24px; text-align: center; }.picker-actions { justify-content: center; }.actions { align-items: stretch; flex-direction: column; gap: 22px; }.convert-button { width: 100%; }.result { padding: 12px; }.result-heading { align-items: flex-start; gap: 10px; }.result-heading .download-all-button { flex: 0 0 auto; min-width: 112px; padding: 9px 8px; font-size: 10px; }.result-item { align-items: center; flex-direction: row; gap: 8px; min-height: 42px; padding-top: 7px; }.result-item strong { min-width: 0; font-size: 10px; }.download-button { flex: 0 0 auto; width: auto; min-width: 82px; padding: 8px 7px; font-size: 10px; }.download-button span { font-size: 15px; } footer { gap: 12px; flex-wrap: wrap; padding-top: 56px; font-size: 8px; }.footer-note { margin-inline: 0; } }
 
 .converter-page { max-width: 1180px; min-height: 100vh; margin: auto; padding: 30px 42px 70px; color: var(--ink); background: var(--paper); font-family: "Space Grotesk", sans-serif; }
+.error-content { display: grid; justify-items: center; gap: 18px; min-height: 66vh; padding-top: 30px; }.error-copy { order: 2; }.error-back-button { display: inline-block; padding: 8px 11px; border: 1px solid var(--ink); color: var(--ink); background: transparent; font: 500 11px "DM Mono", monospace; text-decoration: none; }.error-back-button:hover { color: var(--paper); background: var(--ink); }.error-art { display: grid; place-items: center; width: 100%; min-height: 280px; }.error-art img { width: min(100%, 560px); }
 .ios-guide-hero { max-width: 760px; padding: 70px 0 38px; }.ios-guide-hero h1 { max-width: 720px; margin: 8px 0 15px; font-size: clamp(38px, 6vw, 70px); line-height: .98; letter-spacing: -.04em; }.ios-guide-hero p { max-width: 620px; margin: 0; color: var(--muted); font-size: 17px; line-height: 1.5; }.ios-guide-steps { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }.ios-guide-steps figure { display: grid; grid-template-columns: minmax(0, 1fr) 180px; gap: 16px; align-items: end; margin: 0; padding: 14px; border: 1px solid var(--line); background: #eef3fb; }.ios-guide-steps img { display: block; width: 100%; max-height: 430px; object-fit: contain; object-position: bottom; }.ios-guide-steps figcaption { display: grid; gap: 8px; color: var(--muted); font: 11px/1.45 "DM Mono", monospace; }.ios-guide-steps figcaption strong { color: var(--ink); font: 600 15px/1.15 "Space Grotesk", sans-serif; }.ios-guide-picker { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin-top: 18px; padding: 18px; border: 1px solid var(--ink); background: var(--lime); }.ios-guide-picker p { margin: 0; color: var(--ink); font: 500 13px "DM Mono", monospace; }.ios-guide-button { border: 1px solid var(--ink); padding: 11px 14px; background: var(--orange); color: var(--ink); font: 600 12px "DM Mono", monospace; cursor: pointer; }.ios-guide-status { color: #8f2429 !important; }
 .ios-guide-button { display: inline-block; text-decoration: none; }
 .ios-guide-button { border: 1px solid var(--ink); padding: 8px 11px; background: transparent; color: var(--ink); font: 500 11px "DM Mono", monospace; cursor: pointer; text-decoration: none; }.ios-guide-button:hover { background: var(--ink); color: var(--paper); }
 .app-nav { display: flex; align-items: center; justify-content: space-between; padding-bottom: 20px; }
+.error-art img { display: block; width: min(100%, 500px); height: auto; }
 .nav-brand { display: flex; align-items: center; gap: 10px; color: inherit; text-decoration: none; font: 600 13px "DM Mono", monospace; letter-spacing: .12em; }
 @media (max-width: 700px) { .ios-guide-hero { padding: 48px 0 30px; }.ios-guide-steps { grid-template-columns: 1fr; }.ios-guide-steps figure { grid-template-columns: minmax(0, 1fr) 120px; }.ios-guide-picker { align-items: stretch; flex-direction: column; } }
+@media (max-width: 700px) { .error-content { gap: 24px; min-height: auto; padding: 55px 0 35px; }.error-art { min-height: 220px; }.error-art dotlottie-player { width: min(100%, 340px); } }
 .nav-mark { display: grid; place-items: center; width: 29px; height: 29px; border: 1.5px solid var(--ink); font: 600 16px "Space Grotesk"; }
+@media (max-width: 700px) { .error-art img { width: min(100%, 340px); } }
 .nav-links { display: flex; gap: 8px; margin-left: auto; }.nav-link { padding: 8px 11px; color: var(--muted); text-decoration: none; font: 500 11px "DM Mono", monospace; }.nav-link:hover, .nav-link.active { color: var(--ink); background: var(--lime); }
 .lang-toggle { display: inline-flex; gap: 5px; align-items: center; margin-left: 8px; padding: 8px 10px; border: 1px solid var(--line); color: var(--muted); background: transparent; font: 500 10px "DM Mono", monospace; cursor: pointer; }.lang-toggle span[data-lang] { opacity: .55; }.lang-toggle span[data-lang].active { color: var(--ink); opacity: 1; }
 .converter-hero { width: 100%; margin-inline: auto; padding: 78px 0 54px; }.converter-hero h1 { margin: 0; font-size: clamp(42px, 7vw, 76px); line-height: .98; letter-spacing: -.045em; font-weight: 600; }.converter-hero h1 em { color: #3f65a0; font-style: normal; }.converter-hero .lede { max-width: 570px; color: var(--muted); line-height: 1.6; font-size: 17px; margin: 27px 0 0; }
@@ -49,6 +53,20 @@ footer { display: flex; justify-content: space-between; color: #89918b; margin-t
 
 :lang(km) body { font-family: "Khmer OS Siemreap Local", "Khmer OS Siemreap", "Noto Sans Khmer", sans-serif; }
 :lang(km) body *, :lang(km) body *::before, :lang(km) body *::after { font-family: "Khmer OS Siemreap Local", "Khmer OS Siemreap", "Noto Sans Khmer", sans-serif !important; }
+
+body:has(.error-page) { background: #0d1526; }
+.error-page { --paper: #0d1526; --ink: #f4f7fb; --muted: #a8b4c7; --line: #3b4960; --lime: #22324f; background: var(--paper); }
+.error-content { display: grid; place-items: center; min-height: 66vh; }
+.error-copy { position: fixed; left: 42px; bottom: 70px; z-index: 1; }
+.error-art { width: min(100%, 760px); min-height: 520px; }
+.error-content { display: flex; flex-direction: column; justify-content: center; gap: 8px; }
+.error-copy { position: static; }
+.error-art img { width: min(100%, 680px); }
+@media (max-width: 700px) { .error-art img { width: min(100%, 420px); } }
+.error-page .app-nav { display: none; }
+.error-page .error-art { transform: translateY(-80px); }
+.error-page .error-copy { position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%); z-index: 1; }
+@media (max-width: 700px) { .error-copy { left: 20px; bottom: 20px; }.error-art { min-height: 420px; } }
 :root body, :root body *, :root body *::before, :root body *::after { font-family: "Khmer OS Siemreap Local", "Khmer OS Siemreap", "Noto Sans Khmer", sans-serif !important; }
 :lang(km) h1, :lang(km) h2 { line-height: 1.3 !important; letter-spacing: 0 !important; }
 :lang(km) .converter-hero h1 { font-size: clamp(36px, 5.8vw, 68px) !important; }

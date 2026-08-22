@@ -7,6 +7,10 @@
       converterPageTitle: 'M4A and MP3 to WAV',
       durationPageTitle: 'WAV Duration Ledger',
       iosGuidePageTitle: 'iPhone Voice Memos Guide',
+      errorPageLabel: 'ERROR 404',
+      errorPageTitle: 'This page went quiet.',
+      errorPageText: 'The page you are looking for does not exist or has moved.',
+      errorPageBack: 'Back to converter',
       toggleLanguage: 'Toggle language',
       audioConverter: 'Audio converter',
       converterTitle: 'Convert audio for every workflow.',
@@ -78,7 +82,7 @@
       totalDuration: 'Total duration',
       successfulWav: 'Successful WAV files',
       unsuccessfulFiles: 'Unsuccessful files',
-      average: 'Average',
+      shortestFile: 'Shortest file',
       longestFile: 'Longest file',
       totalSize: 'Total size',
       fileLedger: 'File ledger',
@@ -111,6 +115,10 @@
       converterPageTitle: 'M4A និង MP3 ទៅ WAV',
       durationPageTitle: 'បញ្ជីរយៈពេល WAV',
       iosGuidePageTitle: 'មគ្គុទ្ទេសក៍ Voice Memos លើ iPhone',
+      errorPageLabel: 'កំហុស ៤០៤',
+      errorPageTitle: 'ទំព័រនេះបានស្ងាត់។',
+      errorPageText: 'ទំព័រដែលអ្នកកំពុងស្វែងរកមិនមាន ឬត្រូវបានផ្លាស់ទី។',
+      errorPageBack: 'ត្រឡប់ទៅកម្មវិធីបម្លែង',
       toggleLanguage: 'ប្តូរភាសា',
       audioConverter: 'កម្មវិធីបម្លែងសំឡេង',
       converterTitle: 'បម្លែងសំឡេងសម្រាប់ការងាររបស់អ្នក។',
@@ -182,7 +190,7 @@
       totalDuration: 'រយៈពេលសរុប',
       successfulWav: 'ឯកសារ WAV ជោគជ័យ',
       unsuccessfulFiles: 'ឯកសារមិនជោគជ័យ',
-      average: 'មធ្យម',
+      shortestFile: 'ឯកសារខ្លីបំផុត',
       longestFile: 'ឯកសារយូរបំផុត',
       totalSize: 'ទំហំសរុប',
       fileLedger: 'បញ្ជីឯកសារ',
@@ -213,7 +221,7 @@
   function applyLanguage(language) {
     const selectedLanguage = language === 'kh' ? 'kh' : 'en';
     document.documentElement.lang = selectedLanguage === 'kh' ? 'km' : 'en';
-    const pageTitleKey = location.pathname.endsWith('duration.html') ? 'durationPageTitle' : location.pathname.endsWith('ios-guide.html') ? 'iosGuidePageTitle' : 'converterPageTitle';
+    const pageTitleKey = location.pathname.endsWith('duration.html') ? 'durationPageTitle' : location.pathname.endsWith('ios-guide.html') ? 'iosGuidePageTitle' : location.pathname.endsWith('404.html') ? 'errorPageTitle' : 'converterPageTitle';
     document.title = translations[selectedLanguage][pageTitleKey];
     document.querySelectorAll('[data-i18n]').forEach((element) => {
       const value = translations[selectedLanguage][element.dataset.i18n];

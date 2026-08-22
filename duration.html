@@ -173,7 +173,7 @@
       <div class="metric"><span class="metric-label" data-i18n="totalDuration">Total duration</span><strong id="total" class="metric-value">00:00:00</strong></div>
       <div class="metric"><span class="metric-label" data-i18n="successfulWav">Successful WAV files</span><strong id="file-count" class="metric-value">0</strong></div>
       <div class="metric"><span class="metric-label" data-i18n="unsuccessfulFiles">Unsuccessful files</span><strong id="failed-count" class="metric-value">0</strong></div>
-      <div class="metric"><span class="metric-label" data-i18n="average">Average</span><strong id="average" class="metric-value">00:00</strong></div>
+      <div class="metric"><span class="metric-label" data-i18n="shortestFile">Shortest file</span><strong id="shortest" class="metric-value">00:00</strong></div>
       <div class="metric"><span class="metric-label" data-i18n="longestFile">Longest file</span><strong id="longest" class="metric-value">00:00</strong></div>
       <div class="metric"><span class="metric-label" data-i18n="totalSize">Total size</span><strong id="total-size" class="metric-value">0 B</strong></div>
     </section>
@@ -208,7 +208,7 @@
     const totalEl = document.querySelector('#total');
     const countEl = document.querySelector('#file-count');
     const failedCountEl = document.querySelector('#failed-count');
-    const averageEl = document.querySelector('#average');
+    const shortestEl = document.querySelector('#shortest');
     const longestEl = document.querySelector('#longest');
     const totalSizeEl = document.querySelector('#total-size');
     const resultCount = document.querySelector('#result-count');
@@ -311,7 +311,9 @@
       results.hidden = successes === 0;
       progressWrap.style.display = successes ? 'block' : 'none';
       progress.style.width = '100%';
-      updateSummary(totalSeconds, successes, failedCount, snapshot.longestSeconds || 0, totalSize);
+      const storedDurations = scannedResults.map(item => item.seconds).filter(Number.isFinite);
+      const shortestSeconds = snapshot.shortestSeconds ?? (storedDurations.length ? Math.min(...storedDurations) : 0);
+      updateSummary(totalSeconds, successes, failedCount, shortestSeconds, snapshot.longestSeconds || 0, totalSize);
       renderNonWavFiles(nonWavFiles);
       if (successes) appendTotalRow(totalSeconds);
       status.textContent = durationTranslations ? `${durationTranslations.restored} ${successes} ${durationTranslations.wavFile} ${successes === 1 ? durationTranslations.result : durationTranslations.results} ${durationTranslations.fromBrowser}.` : `Restored ${successes} readable WAV result${successes === 1 ? '' : 's'} from this browser.`;
@@ -378,6 +380,7 @@
       let successes = 0;
       let failedWavCount = 0;
       let longest = { seconds: 0, name: '' };
+      let shortest = { seconds: Infinity, name: '' };
       status.textContent = durationTranslations ? `${durationTranslations.reading} ${wavFiles.length} ${durationTranslations.wavFile}...` : `Reading ${wavFiles.length} WAV file${wavFiles.length === 1 ? '' : 's'}...`;
 
       for (const file of wavFiles) {
@@ -403,6 +406,7 @@
           successes++;
           scannedResults.push({ code: file.name, size: file.size, seconds, minutes: seconds / 60, by: '', location: getFolder(file.webkitRelativePath) || selectedFolderName });
           if (seconds > longest.seconds) longest = { seconds, name: file.name };
+          if (seconds < shortest.seconds) shortest = { seconds, name: file.name };
         } catch (error) {
           durationCell.textContent = durationTranslations?.couldNotRead || 'Could not read';
           durationCell.className = 'error';
@@ -411,14 +415,14 @@
         }
         completed++;
         progress.style.width = `${Math.round(completed / wavFiles.length * 100)}%`;
-        updateSummary(totalSeconds, successes, failedWavCount + nonWavFiles.length, longest.seconds, totalSize);
+        updateSummary(totalSeconds, successes, failedWavCount + nonWavFiles.length, shortest.seconds === Infinity ? 0 : shortest.seconds, longest.seconds, totalSize);
       }
 
       if (scannedResults.length) appendTotalRow(totalSeconds);
       status.textContent = failedWavCount ? `${failedWavCount} ${durationTranslations?.unreadable || 'unreadable file'}${failedWavCount === 1 ? '' : 's'}.` : (durationTranslations?.scanComplete || 'Scan complete. All WAV files were read locally.');
       resultCount.textContent = durationTranslations ? `${successes} ${durationTranslations.readableOf} ${wavFiles.length} ${durationTranslations.wavFile}` : `${successes} readable of ${wavFiles.length} WAV file${wavFiles.length === 1 ? '' : 's'}`;
       exportButton.disabled = scannedResults.length === 0;
-      await saveDurationLedger({ results: scannedResults, totalSeconds, totalSize, longestSeconds: longest.seconds, fileCount: wavFiles.length, failedCount: failedWavCount + nonWavFiles.length, nonWavFiles: nonWavFiles.map(file => file.webkitRelativePath || file.name), folderName: selectedFolderName });
+      await saveDurationLedger({ results: scannedResults, totalSeconds, totalSize, shortestSeconds: shortest.seconds === Infinity ? 0 : shortest.seconds, longestSeconds: longest.seconds, fileCount: wavFiles.length, failedCount: failedWavCount + nonWavFiles.length, nonWavFiles: nonWavFiles.map(file => file.webkitRelativePath || file.name), folderName: selectedFolderName });
     }
 
     function exportCsv() {
@@ -555,12 +559,12 @@
       return hours ? `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}` : `${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
     }
 
-    function resetSummary() { updateSummary(0, 0, 0, 0); }
-    function updateSummary(total, count, failedCount, longest, totalSize = 0) {
+    function resetSummary() { updateSummary(0, 0, 0, 0, 0); }
+    function updateSummary(total, count, failedCount, shortest, longest, totalSize = 0) {
       totalEl.textContent = formatDuration(total);
       countEl.textContent = count;
       failedCountEl.textContent = failedCount;
-      averageEl.textContent = formatDuration(count ? total / count : 0);
+      shortestEl.textContent = formatDuration(shortest);
       longestEl.textContent = formatDuration(longest);
       totalSizeEl.textContent = formatBytes(totalSize);
     }
