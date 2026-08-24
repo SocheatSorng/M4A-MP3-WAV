@@ -2,9 +2,11 @@
   const translations = {
     en: {
       converter: 'Converter',
+      voiceRecorder: 'Voice recorder',
       durationCalculator: 'Duration calculator',
       iosGuideNavigation: 'Guide page',
       converterPageTitle: 'M4A and MP3 to WAV',
+      recorderPageTitle: 'Voice recorder',
       durationPageTitle: 'WAV Duration Ledger',
       iosGuidePageTitle: 'iPhone Voice Memos Guide',
       errorPageLabel: 'ERROR 404',
@@ -37,6 +39,21 @@
       convertedAudio: 'Converted audio',
       downloadAll: 'Download all',
       chooseAudio: 'Drop M4A or MP3 files',
+      recorderLabel: 'VOICE RECORDER',
+      recorderTitle: 'Give your voice a file.',
+      recorderLede: 'Record from your microphone and download a clean MP3. Everything stays in this browser.',
+      voiceRecorderRegion: 'Voice recorder',
+      readyToRecord: 'Ready to record',
+      startRecording: 'Start recording',
+      stopRecording: 'Stop recording',
+      recordingReady: 'RECORDING READY',
+      downloadMp3: 'Download MP3',
+      micPermissionNote: 'Your microphone stays private and local.',
+      microphoneDenied: 'Microphone access was not granted. Check your browser permissions and try again.',
+      recordingUnsupported: 'This browser cannot record audio. Try a current version of Chrome, Edge, Safari, or Firefox.',
+      recordingFailed: 'The recording could not be converted to MP3.',
+      filenameLabel: 'FILENAME',
+      editFilename: 'Edit filename',
       audioToolsNavigation: 'Audio tools navigation',
       closeMessage: 'Close message',
       removeFile: 'Remove',
@@ -110,10 +127,12 @@
     },
     kh: {
       converter: 'កម្មវិធីបម្លែង',
+      voiceRecorder: 'ថតសំឡេង',
       durationCalculator: 'គណនារយៈពេល',
       iosGuideNavigation: 'ទំព័រមគ្គុទ្ទេសក៍',
       converterPageTitle: 'M4A និង MP3 ទៅ WAV',
       durationPageTitle: 'បញ្ជីរយៈពេល WAV',
+      recorderPageTitle: 'កម្មវិធីថតសំឡេង',
       iosGuidePageTitle: 'មគ្គុទ្ទេសក៍ Voice Memos លើ iPhone',
       errorPageLabel: 'កំហុស ៤០៤',
       errorPageTitle: 'ទំព័រនេះបានស្ងាត់។',
@@ -145,6 +164,21 @@
       convertedAudio: 'សំឡេងដែលបានបម្លែង',
       downloadAll: 'ទាញយកទាំងអស់',
       chooseAudio: 'ទម្លាក់ឯកសារ M4A ឬ MP3',
+      recorderLabel: 'ថតសំឡេង',
+      recorderTitle: 'ធ្វើឱ្យសំឡេងរបស់អ្នកក្លាយជាឯកសារ។',
+      recorderLede: 'ថតពីមីក្រូហ្វូន ហើយទាញយកជា MP3។ អ្វីៗទាំងអស់នៅក្នុងកម្មវិធីរុករកនេះ។',
+      voiceRecorderRegion: 'កម្មវិធីថតសំឡេង',
+      readyToRecord: 'ត្រៀមថត',
+      startRecording: 'ចាប់ផ្តើមថត',
+      stopRecording: 'បញ្ឈប់ការថត',
+      recordingReady: 'ការថតរួចរាល់',
+      downloadMp3: 'ទាញយក MP3',
+      micPermissionNote: 'មីក្រូហ្វូនរបស់អ្នកនៅឯកជន និងក្នុងឧបករណ៍។',
+      microphoneDenied: 'មិនបានអនុញ្ញាតឱ្យប្រើមីក្រូហ្វូនទេ។ សូមពិនិត្យសិទ្ធិកម្មវិធីរុករក។',
+      recordingUnsupported: 'កម្មវិធីរុករកនេះមិនអាចថតសំឡេងបានទេ។ សូមសាកល្បង Chrome, Edge, Safari ឬ Firefox ជំនាន់ថ្មី។',
+      recordingFailed: 'មិនអាចបម្លែងការថតទៅជា MP3 បានទេ។',
+      filenameLabel: 'ឈ្មោះឯកសារ',
+      editFilename: 'កែឈ្មោះឯកសារ',
       audioToolsNavigation: 'ការរុករកឧបករណ៍សំឡេង',
       closeMessage: 'បិទសារ',
       removeFile: 'លុប',
@@ -221,7 +255,7 @@
   function applyLanguage(language) {
     const selectedLanguage = language === 'kh' ? 'kh' : 'en';
     document.documentElement.lang = selectedLanguage === 'kh' ? 'km' : 'en';
-    const pageTitleKey = location.pathname.endsWith('duration.html') ? 'durationPageTitle' : location.pathname.endsWith('ios-guide.html') ? 'iosGuidePageTitle' : location.pathname.endsWith('404.html') ? 'errorPageTitle' : 'converterPageTitle';
+    const pageTitleKey = location.pathname.endsWith('duration.html') ? 'durationPageTitle' : location.pathname.endsWith('recorder.html') ? 'recorderPageTitle' : location.pathname.endsWith('ios-guide.html') ? 'iosGuidePageTitle' : location.pathname.endsWith('404.html') ? 'errorPageTitle' : 'converterPageTitle';
     document.title = translations[selectedLanguage][pageTitleKey];
     document.querySelectorAll('[data-i18n]').forEach((element) => {
       const value = translations[selectedLanguage][element.dataset.i18n];
