@@ -106,7 +106,7 @@
       ,fileHeader: 'File', durationHeader: 'Duration', reading: 'Reading...', couldNotRead: 'Could not read',
       waitingFolder: 'Waiting for a folder.', readableOf: 'readable of', wavFile: 'WAV file', restored: 'Restored',
       exported: 'Exported', unreadable: 'unreadable file'
-      ,ready: 'ready', fromBrowser: 'from this browser', result: 'result', results: 'results'
+      ,ready: 'ready', fromBrowser: 'from this browser', result: 'result', results: 'results', estimatedFor: 'Estimated time for', recommendedBatch: 'Suggested batch', estimatedTime: 'about', remaining: 'remaining', complete: 'complete'
     },
     kh: {
       converter: 'កម្មវិធីបម្លែង',
@@ -214,7 +214,7 @@
       ,fileHeader: 'ឯកសារ', durationHeader: 'រយៈពេល', reading: 'កំពុងអាន...', couldNotRead: 'មិនអាចអានបាន',
       waitingFolder: 'កំពុងរង់ចាំថត។', readableOf: 'អាចអានបានក្នុងចំណោម', wavFile: 'ឯកសារ WAV', restored: 'បានស្ដារ',
       exported: 'បាននាំចេញ', unreadable: 'ឯកសារមិនអាចអានបាន'
-      ,ready: 'ត្រៀមរួចរាល់', fromBrowser: 'ពីកម្មវិធីរុករកនេះ', result: 'លទ្ធផល', results: 'លទ្ធផល'
+      ,ready: 'ត្រៀមរួចរាល់', fromBrowser: 'ពីកម្មវិធីរុករកនេះ', result: 'លទ្ធផល', results: 'លទ្ធផល', estimatedFor: 'ពេលវេលាប៉ាន់ស្មានសម្រាប់', recommendedBatch: 'ចំនួនណែនាំក្នុងមួយបាច់', estimatedTime: 'ប្រហែល', remaining: 'នៅសល់', complete: 'រួចរាល់'
     }
   };
 

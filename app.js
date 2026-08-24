@@ -20,6 +20,7 @@ const buttonLabel = document.querySelector('#buttonLabel');
 const progressBlock = document.querySelector('#progressBlock');
 const progressBar = document.querySelector('#progressBar');
 const progressLabel = document.querySelector('#progressLabel');
+const progressEstimate = document.querySelector('#progressEstimate');
 const progressPercent = document.querySelector('#progressPercent');
 const result = document.querySelector('#result');
 const resultTitle = document.querySelector('#resultTitle');
@@ -35,6 +36,9 @@ let outputUrls = [];
 let convertedFiles = [];
 let conversionIndex = 0;
 let conversionTotal = 1;
+let conversionStartedAt = 0;
+let fileConversionStartedAt = 0;
+let conversionRate = { secondsPerMb: 0.47, secondsPerFile: 0 };
 let conversionComplete = false;
 let conversionInProgress = false;
 let languageText = null;
@@ -164,6 +168,7 @@ function createFfmpeg() {
     const percent = Math.max(0, Math.min(100, Math.round(((conversionIndex + ratio) / conversionTotal) * 100)));
     progressBar.style.width = `${percent}%`;
     progressPercent.textContent = `${percent}%`;
+    updateLiveEstimate(ratio);
   });
   return instance;
 }
@@ -212,6 +217,70 @@ function formatBytes(bytes) {
   return `${(bytes / 1024 ** index).toFixed(index ? 1 : 0)} ${units[index]}`;
 }
 
+function getBrowserCapacity() {
+  const cores = navigator.hardwareConcurrency || 4;
+  const memory = navigator.deviceMemory || (cores <= 2 ? 2 : cores <= 4 ? 4 : 8);
+  const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && cores <= 6);
+  const memoryBudgetMb = isMobile ? 128 : Math.min(memory * 128, 512);
+  const maxFiles = isMobile || cores <= 2 ? 2 : cores >= 8 && memory >= 8 ? 6 : 4;
+  return { cores, memory, memoryBudgetMb, maxFiles };
+}
+
+function formatTimeEstimate(seconds) {
+  if (!Number.isFinite(seconds) || seconds <= 0) return '< 1 min';
+  const rounded = Math.ceil(seconds);
+  if (rounded < 60) return `${rounded} sec`;
+  const minutes = Math.ceil(rounded / 60);
+  if (minutes < 60) return `${minutes} min`;
+  return `${Math.floor(minutes / 60)} hr ${minutes % 60} min`;
+}
+
+function getConversionRate() {
+  return conversionRate;
+}
+
+function recordConversionRate(file, elapsedSeconds) {
+  const sizeMb = Math.max(file.size / (1024 * 1024), 0.25);
+  const measuredRate = { secondsPerMb: elapsedSeconds / sizeMb, secondsPerFile: 0 };
+  const previousRate = getConversionRate();
+  const rate = {
+    secondsPerMb: previousRate.secondsPerMb * 0.7 + measuredRate.secondsPerMb * 0.3,
+    secondsPerFile: previousRate.secondsPerFile * 0.7 + measuredRate.secondsPerFile * 0.3
+  };
+  conversionRate = rate;
+}
+
+function estimateConversionSeconds(files) {
+  const rate = getConversionRate();
+  const totalMb = files.reduce((sum, file) => sum + file.size, 0) / (1024 * 1024);
+  const largeQueueSurcharge = Math.max(0, files.length - 100) * 0.5;
+  return 5 + totalMb * rate.secondsPerMb + largeQueueSurcharge;
+}
+
+function updateCapacityEstimate() {
+  if (!selectedFiles.length) {
+    capacityEstimate.textContent = '';
+    return;
+  }
+  const capacity = getBrowserCapacity();
+  const averageSize = selectedFiles.reduce((sum, file) => sum + file.size, 0) / selectedFiles.length;
+  const sizeLimitedBatch = Math.floor((capacity.memoryBudgetMb * 1024 * 1024) / Math.max(averageSize, 1));
+  const recommendedBatch = Math.max(1, Math.min(selectedFiles.length, capacity.maxFiles, sizeLimitedBatch));
+  const batchWord = recommendedBatch === 1 ? (languageText?.file || 'file') : (languageText?.files || 'files');
+  const estimate = formatTimeEstimate(estimateConversionSeconds(selectedFiles));
+  capacityEstimate.textContent = `${languageText?.estimatedFor || 'Estimated for'} ${selectedFiles.length} ${selectedFiles.length === 1 ? (languageText?.file || 'file') : (languageText?.files || 'files')}: ${languageText?.estimatedTime || 'about'} ${estimate} · ${languageText?.recommendedBatch || 'Suggested batch'}: ${recommendedBatch} ${batchWord}`;
+  buttonLabel.textContent = `${languageText?.convertToWav || 'Convert to WAV'} · ${languageText?.estimatedTime || 'about'} ${estimate}`;
+}
+
+function updateLiveEstimate(ratio = 0) {
+  if (!conversionStartedAt || !conversionTotal) return;
+  const completedUnits = conversionIndex + Math.max(0, Math.min(1, ratio));
+  if (completedUnits <= 0) return;
+  const elapsedSeconds = (performance.now() - conversionStartedAt) / 1000;
+  const remainingSeconds = (conversionTotal - completedUnits) * (elapsedSeconds / completedUnits);
+  progressEstimate.textContent = `${languageText?.estimatedTime || 'about'} ${formatTimeEstimate(remainingSeconds)} ${languageText?.remaining || 'remaining'}`;
+}
+
 function normalizeFilenamePrefix(value) {
   const prefix = value.trim();
   return prefix && !prefix.endsWith('_') ? `${prefix}_` : prefix;
@@ -252,6 +321,7 @@ function updateQueue() {
   convertButton.disabled = count === 0;
   buttonLabel.textContent = count > 1 ? `${languageText?.convertToWav || 'Convert'} ${count} ${languageText?.files || 'files'}` : (languageText?.convertToWav || 'Convert to WAV');
   dropZone.querySelector('#dropTitle').textContent = count ? `${count} ${count === 1 ? (languageText?.selectedAudio || 'audio file selected') : (languageText?.selectedAudioPlural || 'audio files selected')}` : (languageText?.dropTitle || 'Drop your audio here');
+  updateCapacityEstimate();
 }
 
 function selectFiles(files) {
@@ -288,6 +358,7 @@ function clearFile() {
   outputUrls.forEach((url) => URL.revokeObjectURL(url));
   outputUrls = [];
   convertedFiles = [];
+  progressEstimate.textContent = '';
   clearSavedResults().catch((error) => console.warn('Could not clear saved results', error));
 }
 
@@ -371,6 +442,8 @@ async function convert() {
   }
   progressBar.style.width = '0%';
   progressPercent.textContent = '0%';
+  conversionStartedAt = performance.now();
+  progressEstimate.textContent = `${languageText?.estimatedTime || 'about'} ${formatTimeEstimate(estimateConversionSeconds(selectedFiles))}`;
   buttonLabel.textContent = languageText?.converting || 'Converting...';
   conversionTotal = selectedFiles.length;
   const failures = [];
@@ -389,9 +462,11 @@ async function convert() {
           await ffmpeg.load();
         }
         lastFfmpegMessage = '';
+        fileConversionStartedAt = performance.now();
         ffmpeg.FS('writeFile', inputName, await fetchFile(selectedFile));
         await ffmpeg.run('-y', '-i', inputName, '-vn', '-acodec', 'pcm_s16le', outputFile);
         const data = new Uint8Array(ffmpeg.FS('readFile', outputFile));
+        recordConversionRate(selectedFile, (performance.now() - fileConversionStartedAt) / 1000);
         const filenamePrefix = normalizeFilenamePrefix(prefixInput.value);
         prefixInput.value = filenamePrefix;
         const outputFileName = `${filenamePrefix}${selectedFile.name.replace(/\.[^/.]+$/, '')}.wav`;
@@ -425,6 +500,7 @@ async function convert() {
     resultTitle.textContent = `${outputUrls.length} ${languageText?.wavFile || 'WAV file'} ${languageText?.ready || 'ready'}${failures.length ? `, ${failures.length} ${languageText?.skipped || 'skipped'}` : ''}`;
     progressBar.style.width = '100%';
     progressPercent.textContent = '100%';
+    progressEstimate.textContent = languageText?.complete || 'complete';
     progressLabel.textContent = failures.length ? (languageText?.conversionCompleteSkipped || 'Conversion complete with skipped files') : (languageText?.conversionComplete || 'Conversion complete');
     window.dispatchEvent(new CustomEvent('wavecraft:converted', {
       detail: {
@@ -442,7 +518,7 @@ async function convert() {
     clearButton.disabled = false;
     folderPickerButton.disabled = false;
     prefixInput.disabled = false;
-    buttonLabel.textContent = selectedFiles.length > 1 ? `${languageText?.convertToWav || 'Convert'} ${selectedFiles.length} ${languageText?.files || 'files'}` : (languageText?.convertToWav || 'Convert to WAV');
+    updateCapacityEstimate();
   }
 }
 

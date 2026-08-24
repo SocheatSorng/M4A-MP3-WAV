@@ -290,6 +290,7 @@
       const fileCount = snapshot.fileCount || scannedResults.length;
       const nonWavFiles = snapshot.nonWavFiles || [];
       rows.replaceChildren();
+      const rowFragment = document.createDocumentFragment();
       scannedResults.forEach(item => {
         const row = document.createElement('tr');
         const nameCell = document.createElement('td');
@@ -305,8 +306,9 @@
         durationCell.textContent = Number.isFinite(item.seconds) ? formatDuration(item.seconds) : (durationTranslations?.couldNotRead || 'Could not read');
         if (!Number.isFinite(item.seconds)) durationCell.className = 'error';
         row.append(nameCell, durationCell);
-        rows.append(row);
+        rowFragment.append(row);
       });
+      rows.append(rowFragment);
       empty.hidden = successes > 0;
       results.hidden = successes === 0;
       progressWrap.style.display = successes ? 'block' : 'none';
