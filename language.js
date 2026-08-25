@@ -14,6 +14,7 @@
       errorPageText: 'The page you are looking for does not exist or has moved.',
       errorPageBack: 'Back to converter',
       toggleLanguage: 'Toggle language',
+      openNavigation: 'Open navigation',
       audioConverter: 'Audio converter',
       converterTitle: 'Convert audio for every workflow.',
       converterTitleAccent: 'M4A and MP3 to WAV.',
@@ -139,6 +140,7 @@
       errorPageText: 'ទំព័រដែលអ្នកកំពុងស្វែងរកមិនមាន ឬត្រូវបានផ្លាស់ទី។',
       errorPageBack: 'ត្រឡប់ទៅកម្មវិធីបម្លែង',
       toggleLanguage: 'ប្តូរភាសា',
+      openNavigation: 'បើកការរុករក',
       audioConverter: 'កម្មវិធីបម្លែងសំឡេង',
       converterTitle: 'បម្លែងសំឡេងសម្រាប់ការងាររបស់អ្នក។',
       converterTitleAccent: 'M4A និង MP3 ទៅ WAV។',
@@ -288,6 +290,21 @@
       button.addEventListener('click', () => {
         const currentLanguage = localStorage.getItem('wavecraft-language') || initialLanguage;
         applyLanguage(currentLanguage === 'en' ? 'kh' : 'en');
+      });
+    });
+    document.querySelectorAll('.nav-menu-button').forEach((button) => {
+      button.addEventListener('click', () => {
+        const navigation = button.closest('.app-nav');
+        const expanded = navigation.classList.toggle('menu-open');
+        button.setAttribute('aria-expanded', String(expanded));
+      });
+    });
+    document.querySelectorAll('.nav-links a').forEach((link) => {
+      link.addEventListener('click', () => {
+        const navigation = link.closest('.app-nav');
+        const button = navigation?.querySelector('.nav-menu-button');
+        navigation?.classList.remove('menu-open');
+        button?.setAttribute('aria-expanded', 'false');
       });
     });
     applyLanguage(initialLanguage);

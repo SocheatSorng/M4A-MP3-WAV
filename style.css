@@ -34,6 +34,8 @@ footer { display: flex; justify-content: space-between; color: #89918b; margin-t
 .ios-guide-button { display: inline-block; text-decoration: none; }
 .ios-guide-button { border: 1px solid var(--ink); padding: 8px 11px; background: transparent; color: var(--ink); font: 500 11px "DM Mono", monospace; cursor: pointer; text-decoration: none; }.ios-guide-button:hover { background: var(--ink); color: var(--paper); }
 .app-nav { display: flex; align-items: center; justify-content: space-between; padding-bottom: 20px; }
+.nav-menu-button { display: none; align-items: center; justify-content: center; flex-direction: column; gap: 4px; width: 38px; height: 34px; padding: 7px; border: 1px solid var(--line); color: var(--ink); background: transparent; cursor: pointer; }
+.nav-menu-button span { display: block; width: 17px; height: 1px; background: currentColor; transition: transform .18s, opacity .18s; }
 .error-art img { display: block; width: min(100%, 500px); height: auto; }
 .nav-brand { display: flex; align-items: center; gap: 10px; color: inherit; text-decoration: none; font: 600 13px "DM Mono", monospace; letter-spacing: .12em; }
 @media (max-width: 700px) { .ios-guide-hero { padding: 48px 0 30px; }.ios-guide-steps { grid-template-columns: 1fr; }.ios-guide-steps figure { grid-template-columns: minmax(0, 1fr) 120px; }.ios-guide-picker { align-items: stretch; flex-direction: column; } }
@@ -44,7 +46,7 @@ footer { display: flex; justify-content: space-between; color: #89918b; margin-t
 .lang-toggle { display: inline-flex; gap: 5px; align-items: center; margin-left: 8px; padding: 8px 10px; border: 1px solid var(--line); color: var(--muted); background: transparent; font: 500 10px "DM Mono", monospace; cursor: pointer; }.lang-toggle span[data-lang] { opacity: .55; }.lang-toggle span[data-lang].active { color: var(--ink); opacity: 1; }
 .converter-hero { width: 100%; margin-inline: auto; padding: 78px 0 54px; }.converter-hero h1 { margin: 0; font-size: clamp(42px, 7vw, 76px); line-height: .98; letter-spacing: -.045em; font-weight: 600; }.converter-hero h1 em { color: #3f65a0; font-style: normal; }.converter-hero .lede { max-width: 570px; color: var(--muted); line-height: 1.6; font-size: 17px; margin: 27px 0 0; }
 .converter-page .workspace { width: 100%; margin-inline: auto; }.site-footer { display: flex; justify-content: space-between; color: var(--muted); margin-top: 75px; padding-top: 20px; font: 500 10px "DM Mono", monospace; letter-spacing: .13em; }
-@media (max-width: 640px) { .converter-page { padding: 22px 20px 20px; }.app-nav { align-items: flex-start; gap: 18px; flex-direction: column; }.converter-hero { padding: 55px 0 38px; }.converter-hero h1 { font-size: 47px; }.site-footer { gap: 12px; flex-wrap: wrap; font-size: 8px; } }
+@media (max-width: 640px) { .converter-page { padding: 22px 20px 20px; }.app-nav { align-items: flex-start; gap: 10px; flex-direction: column; }.nav-menu-button { display: inline-flex; }.app-nav .nav-links { display: none !important; width: 100%; margin-left: 0; padding-top: 6px; flex-direction: column; align-items: stretch; gap: 2px; }.app-nav.menu-open .nav-links { display: flex !important; }.app-nav .nav-link, .app-nav .lang-toggle { width: 100%; margin-left: 0; text-align: left; }.app-nav .lang-toggle { justify-content: flex-start; }.converter-hero { padding: 55px 0 38px; }.converter-hero h1 { font-size: 47px; }.site-footer { gap: 12px; flex-wrap: wrap; font-size: 8px; } }
 
 .unsupported-panel.is-hidden { display: none; }
 .unsupported-copy { flex: 1; min-width: 0; }
@@ -63,7 +65,7 @@ body:has(.error-page) { background: #0d1526; }
 .error-copy { position: static; }
 .error-art img { width: min(100%, 680px); }
 @media (max-width: 700px) { .error-art img { width: min(100%, 420px); } }
-.error-page .app-nav { display: none; }
+.error-page .app-nav { display: flex; }
 .error-page .error-art { transform: translateY(-80px); }
 .error-page .error-copy { position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%); z-index: 1; }
 @media (max-width: 700px) { .error-copy { left: 20px; bottom: 20px; }.error-art { min-height: 420px; } }
