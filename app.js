@@ -30,6 +30,7 @@ const toast = document.querySelector('#toast');
 const toastMessage = document.querySelector('#toastMessage');
 const toastClose = document.querySelector('#toastClose');
 const prefixInput = document.querySelector('#prefixInput');
+const capacityEstimate = document.querySelector('#capacityEstimate');
 
 let selectedFiles = [];
 let outputUrls = [];
@@ -227,12 +228,17 @@ function getBrowserCapacity() {
 }
 
 function formatTimeEstimate(seconds) {
-  if (!Number.isFinite(seconds) || seconds <= 0) return '< 1 min';
-  const rounded = Math.ceil(seconds);
+  if (!Number.isFinite(seconds) || seconds <= 0) return '< 5 sec';
+  const rounded = Math.round(seconds);
   if (rounded < 60) return `${rounded} sec`;
-  const minutes = Math.ceil(rounded / 60);
-  if (minutes < 60) return `${minutes} min`;
-  return `${Math.floor(minutes / 60)} hr ${minutes % 60} min`;
+  const minutes = Math.floor(rounded / 60);
+  const remainingSecs = rounded % 60;
+  if (minutes < 60) {
+    return remainingSecs > 0 ? `${minutes} min ${remainingSecs} sec` : `${minutes} min`;
+  }
+  const hours = Math.floor(minutes / 60);
+  const remainingMins = minutes % 60;
+  return remainingMins > 0 ? `${hours} hr ${remainingMins} min` : `${hours} hr`;
 }
 
 function getConversionRate() {
@@ -240,24 +246,28 @@ function getConversionRate() {
 }
 
 function recordConversionRate(file, elapsedSeconds) {
-  const sizeMb = Math.max(file.size / (1024 * 1024), 0.25);
-  const measuredRate = { secondsPerMb: elapsedSeconds / sizeMb, secondsPerFile: 0 };
+  const sizeMb = Math.max(file.size / (1024 * 1024), 0.1);
+  const measuredSecPerMb = Math.max(0.05, elapsedSeconds / sizeMb);
   const previousRate = getConversionRate();
-  const rate = {
-    secondsPerMb: previousRate.secondsPerMb * 0.7 + measuredRate.secondsPerMb * 0.3,
-    secondsPerFile: previousRate.secondsPerFile * 0.7 + measuredRate.secondsPerFile * 0.3
+  conversionRate = {
+    secondsPerMb: previousRate.secondsPerMb * 0.6 + measuredSecPerMb * 0.4,
+    secondsPerFile: 0.25
   };
-  conversionRate = rate;
 }
 
 function estimateConversionSeconds(files) {
+  if (!files || !files.length) return 0;
   const rate = getConversionRate();
   const totalMb = files.reduce((sum, file) => sum + file.size, 0) / (1024 * 1024);
-  const largeQueueSurcharge = Math.max(0, files.length - 100) * 0.5;
-  return 5 + totalMb * rate.secondsPerMb + largeQueueSurcharge;
+  // Startup overhead (FFmpeg load if not loaded yet) + per-file overhead (~0.25s) + decode/encode rate
+  const startupOverhead = (ffmpeg && ffmpeg.isLoaded()) ? 0.3 : 2.5;
+  const perFileOverhead = files.length * 0.25;
+  const computeTime = totalMb * (rate.secondsPerMb || 0.47);
+  return Math.max(1, startupOverhead + perFileOverhead + computeTime);
 }
 
 function updateCapacityEstimate() {
+  if (!capacityEstimate) return;
   if (!selectedFiles.length) {
     capacityEstimate.textContent = '';
     return;
@@ -273,12 +283,32 @@ function updateCapacityEstimate() {
 }
 
 function updateLiveEstimate(ratio = 0) {
-  if (!conversionStartedAt || !conversionTotal) return;
-  const completedUnits = conversionIndex + Math.max(0, Math.min(1, ratio));
-  if (completedUnits <= 0) return;
-  const elapsedSeconds = (performance.now() - conversionStartedAt) / 1000;
-  const remainingSeconds = (conversionTotal - completedUnits) * (elapsedSeconds / completedUnits);
-  progressEstimate.textContent = `${languageText?.estimatedTime || 'about'} ${formatTimeEstimate(remainingSeconds)} ${languageText?.remaining || 'remaining'}`;
+  if (!conversionInProgress || !selectedFiles.length || !conversionTotal) return;
+  const currentFile = selectedFiles[conversionIndex];
+  if (!currentFile) return;
+
+  const rate = getConversionRate();
+  const currentFileSizeMb = currentFile.size / (1024 * 1024);
+  const clampedRatio = Math.max(0, Math.min(1, ratio));
+
+  // Remaining time on current active file
+  const currentFileTotalEst = (currentFileSizeMb * (rate.secondsPerMb || 0.47)) + 0.25;
+  const currentFileRemaining = Math.max(0, (1 - clampedRatio) * currentFileTotalEst);
+
+  // Remaining time for subsequent files in queue
+  let remainingQueueSeconds = 0;
+  for (let i = conversionIndex + 1; i < selectedFiles.length; i++) {
+    const fileMb = selectedFiles[i].size / (1024 * 1024);
+    remainingQueueSeconds += (fileMb * (rate.secondsPerMb || 0.47)) + 0.25;
+  }
+
+  const totalRemainingSeconds = Math.max(0, currentFileRemaining + remainingQueueSeconds);
+
+  if (totalRemainingSeconds < 1 && conversionIndex === conversionTotal - 1 && clampedRatio > 0.9) {
+    progressEstimate.textContent = `${languageText?.complete || 'almost complete'}`;
+  } else {
+    progressEstimate.textContent = `${languageText?.estimatedTime || 'about'} ${formatTimeEstimate(totalRemainingSeconds)} ${languageText?.remaining || 'remaining'}`;
+  }
 }
 
 function normalizeFilenamePrefix(value) {
@@ -327,9 +357,10 @@ function updateQueue() {
 function selectFiles(files) {
   const incomingFiles = Array.from(files || []);
   if (!incomingFiles.length) return;
-  const unsupportedFiles = incomingFiles.filter((file) => !isSupported(file));
-  if (unsupportedFiles.length) {
-    showUnsupportedFiles(unsupportedFiles);
+  // Use a local name to avoid shadowing the module-level `unsupportedFiles` variable.
+  const rejectedFiles = incomingFiles.filter((file) => !isSupported(file));
+  if (rejectedFiles.length) {
+    showUnsupportedFiles(rejectedFiles);
   }
   const validFiles = incomingFiles.filter((file) => {
     if (!isSupported(file)) return false;
@@ -341,7 +372,7 @@ function selectFiles(files) {
   });
   const existingKeys = new Set(selectedFiles.map((file) => `${file.name}:${file.size}:${file.lastModified}`));
   const newFiles = validFiles.filter((file) => !existingKeys.has(`${file.name}:${file.size}:${file.lastModified}`));
-  if (!newFiles.length && !validFiles.length && !unsupportedFiles.length) showToast(languageText?.chooseSupported || 'Please choose M4A or MP3 files.');
+  if (!newFiles.length && !validFiles.length && !rejectedFiles.length) showToast(languageText?.chooseSupported || 'Please choose M4A or MP3 files.');
   selectedFiles.push(...newFiles);
   conversionComplete = false;
   result.classList.add('is-hidden');
@@ -453,6 +484,7 @@ async function convert() {
       conversionIndex = index;
       const selectedFile = selectedFiles[index];
       progressLabel.textContent = `${languageText?.converting || 'Converting...'} ${index + 1} of ${conversionTotal}: ${selectedFile.name}`;
+      updateLiveEstimate(0);
       const extension = selectedFile.name.toLowerCase().endsWith('.m4a') ? '.m4a' : '.mp3';
       const inputName = `input-${index}${extension}`;
       const outputFile = `output-${index}.wav`;
@@ -541,10 +573,8 @@ folderInput.addEventListener('change', (event) => { selectFiles(event.target.fil
 fileInput.addEventListener('change', (event) => { selectFiles(event.target.files); fileInput.value = ''; });
 clearButton.addEventListener('click', clearFile);
 convertButton.addEventListener('click', convert);
+// Normalize on blur only — 'change' always fires after blur so it would be redundant.
 prefixInput.addEventListener('blur', () => {
-  prefixInput.value = normalizeFilenamePrefix(prefixInput.value);
-});
-prefixInput.addEventListener('change', () => {
   prefixInput.value = normalizeFilenamePrefix(prefixInput.value);
 });
 downloadAllButton.addEventListener('click', downloadAll);
@@ -561,12 +591,19 @@ window.addEventListener('wavecraft:language', (event) => {
   event.preventDefault();
   dropZone.classList.add('dragging');
 }));
-['dragleave', 'drop'].forEach((eventName) => dropZone.addEventListener(eventName, (event) => {
+dropZone.addEventListener('dragleave', (event) => {
   event.preventDefault();
   dropZone.classList.remove('dragging');
-}));
+});
+// Single 'drop' handler: removes dragging class AND processes files.
+// Previously there were two separate listeners for this (one in an array loop,
+// one standalone), which would have called selectFiles twice per drop.
+dropZone.addEventListener('drop', (event) => {
+  event.preventDefault();
+  dropZone.classList.remove('dragging');
+  selectFiles(event.dataTransfer.files);
+});
 
-dropZone.addEventListener('drop', (event) => selectFiles(event.dataTransfer.files));
 clearAllSavedDataOnReload()
   .then(() => Promise.all([loadConvertedResults(), loadQueuedFiles()]))
   .catch((error) => console.warn('Could not initialize saved results', error));

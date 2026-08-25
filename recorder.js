@@ -236,7 +236,13 @@
     ffmpeg.FS('writeFile', 'voice-input', await fetchFile(blob));
     await ffmpeg.run('-y', '-i', 'voice-input', '-vn', '-codec:a', 'libmp3lame', '-b:a', '128k', 'voice-output.mp3');
     const data = ffmpeg.FS('readFile', 'voice-output.mp3');
-    try { ffmpeg.exit(); } catch (error) { /* Worker cleanup is best effort. */ }
+    try {
+      ffmpeg.FS('unlink', 'voice-input');
+      ffmpeg.FS('unlink', 'voice-output.mp3');
+      if (ffmpeg.isLoaded()) ffmpeg.exit();
+    } catch (error) {
+      // ignore cleanup errors
+    }
     return new Blob([data], { type: 'audio/mpeg' });
   }
 
@@ -247,6 +253,8 @@
   }
 
   async function finishRecording() {
+    // Clear the interval before stopping the recorder so the timer
+    // doesn't keep ticking while FFmpeg encodes the MP3.
     clearInterval(timerId);
     mediaRecorder.stop();
     stopTracks();
@@ -286,6 +294,8 @@
           recordButtonLabel.textContent = text('start');
           setStatus(text('recordingFailed'));
         } finally {
+          // Always clear chunks to free memory, regardless of success or failure.
+          recordingChunks = [];
           recordButton.disabled = false;
         }
       }, { once: true });
