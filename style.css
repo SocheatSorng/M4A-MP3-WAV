@@ -1143,8 +1143,10 @@ tbody tr:last-child td { border-bottom: 0; }
   }
   .app-nav.menu-open .nav-links { display: flex !important; }
   .app-nav .nav-link,
-  .app-nav .lang-toggle { width: 100%; margin-left: 0; text-align: left; }
-  .app-nav .lang-toggle { justify-content: flex-start; }
+  .app-nav .lang-toggle,
+  .app-nav .theme-toggle { width: 100%; margin-left: 0; text-align: left; }
+  .app-nav .lang-toggle,
+  .app-nav .theme-toggle { justify-content: flex-start; }
 
   /* Hero */
   .converter-hero { padding: 55px 0 38px; }
@@ -1188,6 +1190,239 @@ tbody tr:last-child td { border-bottom: 0; }
   th, td { padding: 13px 12px; }
   th:nth-child(2), td:nth-child(2) { display: none; }
   .file-name { max-width: 210px; }
+}
+
+/* ============================================================
+   THEME TOGGLE BUTTON
+   ============================================================ */
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  color: var(--muted);
+  background: transparent;
+  font: 500 10px "DM Mono", monospace;
+  letter-spacing: .08em;
+  cursor: pointer;
+  transition: color .18s, border-color .18s, background .18s;
+}
+.theme-toggle:hover { color: var(--ink); }
+.theme-toggle .theme-toggle-icon { font-size: 12px; line-height: 1; }
+.theme-toggle[aria-pressed="true"] { color: var(--ink); border-color: var(--ink); background: var(--lime); }
+
+/* ============================================================
+   GLASSMORPHISM THEME
+   Toggled via html[data-theme="glass"] (see theme.js)
+   ============================================================ */
+html[data-theme="glass"] {
+  --ink: #1c2340;
+  --muted: #565f88;
+  --line: rgba(255, 255, 255, .55);
+  --lime: #efe9ff;
+  --orange: #ff6f8e;
+  --teal: #7c6cf0;
+  --teal-dark: #5741d6;
+  --mint: rgba(255, 255, 255, .5);
+  --danger: #e5484d;
+  --shadow: 0 20px 60px rgba(48, 40, 120, .22);
+}
+
+@keyframes glass-drift {
+  0%   { transform: translate3d(0, 0, 0) scale(1); }
+  50%  { transform: translate3d(2%, -3%, 0) scale(1.05); }
+  100% { transform: translate3d(0, 0, 0) scale(1); }
+}
+
+html[data-theme="glass"] body {
+  position: relative;
+  background: linear-gradient(160deg, #f3f5ff 0%, #eaeeff 45%, #f1eefc 100%);
+  overflow-x: hidden;
+}
+
+html[data-theme="glass"] body::before,
+html[data-theme="glass"] body::after {
+  content: "";
+  position: fixed;
+  z-index: -1;
+  border-radius: 50%;
+  filter: blur(70px);
+  pointer-events: none;
+}
+
+html[data-theme="glass"] body::before {
+  width: 46vw;
+  height: 46vw;
+  top: -10vw;
+  left: -8vw;
+  background: radial-gradient(circle, rgba(255, 130, 178, .55), transparent 70%),
+              radial-gradient(circle, rgba(124, 108, 240, .45), transparent 70%);
+}
+
+html[data-theme="glass"] body::after {
+  width: 50vw;
+  height: 50vw;
+  bottom: -14vw;
+  right: -10vw;
+  background: radial-gradient(circle, rgba(99, 179, 255, .5), transparent 70%),
+              radial-gradient(circle, rgba(255, 209, 128, .35), transparent 70%);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html[data-theme="glass"] body::before { animation: glass-drift 22s ease-in-out infinite; }
+  html[data-theme="glass"] body::after { animation: glass-drift 26s ease-in-out infinite reverse; }
+}
+
+html[data-theme="glass"] .converter-page,
+html[data-theme="glass"] .duration-page {
+  background: transparent;
+}
+
+/* Shared glass-card treatment */
+html[data-theme="glass"] .drop-zone,
+html[data-theme="glass"] .unsupported-panel,
+html[data-theme="glass"] .file-panel,
+html[data-theme="glass"] .result,
+html[data-theme="glass"] .picker,
+html[data-theme="glass"] .metric,
+html[data-theme="glass"] .non-wav-panel,
+html[data-theme="glass"] .non-wav-item,
+html[data-theme="glass"] .table-wrap,
+html[data-theme="glass"] .recording-result,
+html[data-theme="glass"] .ios-guide-steps figure,
+html[data-theme="glass"] .ios-guide-picker,
+html[data-theme="glass"] .app-nav.menu-open .nav-links {
+  background: rgba(255, 255, 255, .45);
+  border: 1px solid rgba(255, 255, 255, .6);
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(18px) saturate(160%);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
+}
+
+html[data-theme="glass"] .drop-zone:hover,
+html[data-theme="glass"] .drop-zone:focus-visible,
+html[data-theme="glass"] .drop-zone.dragging,
+html[data-theme="glass"] .picker.dragging {
+  background: rgba(255, 255, 255, .62);
+  border-color: rgba(255, 255, 255, .85);
+  transform: translateY(-2px);
+}
+
+html[data-theme="glass"] .metric:first-child {
+  background: linear-gradient(135deg, var(--teal), var(--teal-dark));
+  border-color: transparent;
+}
+
+html[data-theme="glass"] .picker::after { border-color: rgba(255, 255, 255, .6); }
+
+html[data-theme="glass"] .table-head { border-bottom-color: rgba(255, 255, 255, .5); }
+html[data-theme="glass"] th { background: transparent; }
+html[data-theme="glass"] th, html[data-theme="glass"] td { border-bottom-color: rgba(255, 255, 255, .4); }
+html[data-theme="glass"] .total-row td { background: rgba(124, 108, 240, .18); color: var(--teal-dark); }
+html[data-theme="glass"] .estimate-row td { background: rgba(255, 255, 255, .3); }
+
+/* Buttons — frosted pill style */
+html[data-theme="glass"] .convert-button,
+html[data-theme="glass"] .download-button,
+html[data-theme="glass"] .download-all-button,
+html[data-theme="glass"] .record-button,
+html[data-theme="glass"] .recording-result .download-button {
+  background: linear-gradient(135deg, var(--teal), var(--teal-dark));
+  border-radius: 14px;
+  box-shadow: 0 10px 30px rgba(87, 65, 214, .35);
+}
+html[data-theme="glass"] .convert-button:hover:not(:disabled),
+html[data-theme="glass"] .download-button:hover { background: linear-gradient(135deg, var(--teal-dark), var(--teal)); }
+html[data-theme="glass"] .record-button { background: rgba(255, 255, 255, .85); color: var(--ink); }
+html[data-theme="glass"] .record-button:hover:not(:disabled) { background: var(--orange); color: #fff; }
+
+html[data-theme="glass"] .picker .button,
+html[data-theme="glass"] .convert-all-button,
+html[data-theme="glass"] .export-button,
+html[data-theme="glass"] .convert-file-button,
+html[data-theme="glass"] .picker-actions button,
+html[data-theme="glass"] .ios-guide-button,
+html[data-theme="glass"] .error-back-button {
+  border-radius: 10px;
+  border-color: rgba(124, 108, 240, .5);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+html[data-theme="glass"] .picker .button,
+html[data-theme="glass"] .convert-all-button {
+  background: linear-gradient(135deg, var(--teal), var(--teal-dark));
+}
+html[data-theme="glass"] .picker .button:hover,
+html[data-theme="glass"] .convert-all-button:hover { background: var(--teal-dark); }
+
+/* Inputs */
+html[data-theme="glass"] .prefix-field input,
+html[data-theme="glass"] .recording-filename input {
+  background: rgba(255, 255, 255, .55);
+  border-radius: 10px;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+/* Nav */
+html[data-theme="glass"] .nav-mark {
+  border-radius: 9px;
+  background: rgba(255, 255, 255, .5);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+html[data-theme="glass"] .nav-link:hover,
+html[data-theme="glass"] .nav-link.active {
+  border-radius: 10px;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+html[data-theme="glass"] .lang-toggle,
+html[data-theme="glass"] .theme-toggle,
+html[data-theme="glass"] .nav-menu-button {
+  border-radius: 10px;
+  background: rgba(255, 255, 255, .35);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+html[data-theme="glass"] .theme-toggle[aria-pressed="true"] { background: rgba(124, 108, 240, .28); }
+
+/* Recorder stage — dark glass variant */
+html[data-theme="glass"] .recorder-stage {
+  background: linear-gradient(150deg, rgba(87, 65, 214, .55), rgba(20, 22, 46, .68));
+  border-radius: 22px;
+  border-color: rgba(255, 255, 255, .18);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+}
+
+/* Toast */
+html[data-theme="glass"] .toast {
+  background: rgba(229, 72, 77, .82);
+  border-radius: 16px;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+/* Error page — dark glass variant */
+html[data-theme="glass"] .error-page {
+  --ink: #f4f7fb;
+  --muted: #c3cbea;
+  --line: rgba(255, 255, 255, .2);
+  --lime: rgba(255, 255, 255, .1);
+  background: transparent;
+}
+html[data-theme="glass"] body:has(.error-page) {
+  background: linear-gradient(160deg, #0d1230 0%, #171b3d 55%, #10142c 100%);
+}
+html[data-theme="glass"] body:has(.error-page)::before {
+  background: radial-gradient(circle, rgba(124, 108, 240, .5), transparent 70%);
+}
+html[data-theme="glass"] body:has(.error-page)::after {
+  background: radial-gradient(circle, rgba(255, 111, 142, .35), transparent 70%);
 }
 
 /* ============================================================
