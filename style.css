@@ -1407,6 +1407,102 @@ html[data-theme="glass"] .toast {
   -webkit-backdrop-filter: blur(14px);
 }
 
+/* Queue / result list dividers + icon chip */
+html[data-theme="glass"] .queue-item { border-top-color: rgba(255, 255, 255, .5); }
+html[data-theme="glass"] .result-item { border-top-color: rgba(124, 108, 240, .3); }
+html[data-theme="glass"] .queue-item::before {
+  border-radius: 8px;
+  background: linear-gradient(135deg, var(--teal), var(--teal-dark));
+  color: #fff;
+}
+
+/* Progress bars — frosted pill track + gradient fill */
+html[data-theme="glass"] .progress-track,
+html[data-theme="glass"] .duration-page .progress-wrap {
+  background: rgba(255, 255, 255, .4);
+  border-radius: 99px;
+  overflow: hidden;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+html[data-theme="glass"] .progress-bar {
+  background: linear-gradient(90deg, var(--orange), var(--teal));
+  border-radius: 99px;
+}
+html[data-theme="glass"] .duration-page .progress {
+  background: linear-gradient(90deg, var(--teal), var(--orange));
+  border-radius: 99px;
+}
+
+/* Small icon-only buttons — soft glass hover affordance */
+html[data-theme="glass"] .remove-file,
+html[data-theme="glass"] .icon-button,
+html[data-theme="glass"] .toast-close,
+html[data-theme="glass"] .unsupported-close,
+html[data-theme="glass"] .edit-filename-button,
+html[data-theme="glass"] .non-wav-toggle {
+  border-radius: 8px;
+  transition: background .18s, color .18s;
+}
+html[data-theme="glass"] .remove-file:hover,
+html[data-theme="glass"] .icon-button:hover,
+html[data-theme="glass"] .edit-filename-button:hover {
+  background: rgba(124, 108, 240, .16);
+  color: var(--teal-dark);
+}
+html[data-theme="glass"] .unsupported-close:hover,
+html[data-theme="glass"] .unsupported-close:focus-visible {
+  background: rgba(229, 72, 77, .18);
+}
+
+/* Unsupported-file warning panel — tinted glass, keeps its alert meaning */
+html[data-theme="glass"] .unsupported-panel {
+  background: rgba(255, 235, 238, .55);
+  border-color: rgba(229, 72, 77, .35);
+}
+
+/* Wave art + level meter — soft glow to match the frosted aesthetic */
+html[data-theme="glass"] .wave {
+  border-radius: 5px;
+  box-shadow: 0 0 12px rgba(255, 111, 142, .45);
+}
+html[data-theme="glass"] .wave-b,
+html[data-theme="glass"] .wave-d {
+  box-shadow: 0 0 12px rgba(124, 108, 240, .45);
+}
+html[data-theme="glass"] .level-meter span {
+  box-shadow: 0 0 8px rgba(255, 111, 142, .5);
+}
+html[data-theme="glass"] .level-meter span:nth-child(even) {
+  box-shadow: 0 0 8px rgba(239, 233, 255, .6);
+}
+
+/* Text selection + scrollbars, themed to match */
+html[data-theme="glass"] ::selection {
+  background: rgba(124, 108, 240, .35);
+  color: var(--ink);
+}
+html[data-theme="glass"] .queue-list,
+html[data-theme="glass"] .result-list,
+html[data-theme="glass"] .non-wav-list,
+html[data-theme="glass"] .unsupported-list {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(124, 108, 240, .45) transparent;
+}
+html[data-theme="glass"] .queue-list::-webkit-scrollbar,
+html[data-theme="glass"] .result-list::-webkit-scrollbar,
+html[data-theme="glass"] .non-wav-list::-webkit-scrollbar,
+html[data-theme="glass"] .unsupported-list::-webkit-scrollbar {
+  width: 6px;
+}
+html[data-theme="glass"] .queue-list::-webkit-scrollbar-thumb,
+html[data-theme="glass"] .result-list::-webkit-scrollbar-thumb,
+html[data-theme="glass"] .non-wav-list::-webkit-scrollbar-thumb,
+html[data-theme="glass"] .unsupported-list::-webkit-scrollbar-thumb {
+  background: rgba(124, 108, 240, .45);
+  border-radius: 99px;
+}
+
 /* Error page — dark glass variant */
 html[data-theme="glass"] .error-page {
   --ink: #f4f7fb;
