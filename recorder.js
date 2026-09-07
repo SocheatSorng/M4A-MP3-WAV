@@ -8,6 +8,14 @@
   const recorderStatus = document.querySelector('#recorderStatus');
   const recorderStage = document.querySelector('#recorderStage');
   const recordingResults = document.querySelector('#recordingResults');
+  const formatTabs = [...document.querySelectorAll('.format-tab')];
+  const ledeEl = document.querySelector('[data-i18n="recorderLede"]');
+
+  const RECORD_FORMAT_LABELS = { mp3: 'MP3', wav: 'WAV' };
+  const RECORD_FORMAT_EXT = { mp3: 'mp3', wav: 'wav' };
+  const RECORD_FORMAT_MIME = { mp3: 'audio/mpeg', wav: 'audio/wav' };
+  let recordFormat = localStorage.getItem('wavecraft-recorder-format');
+  if (!RECORD_FORMAT_LABELS[recordFormat]) recordFormat = 'mp3';
 
   let mediaRecorder;
   let mediaStream;
@@ -24,24 +32,50 @@
   const fallbackText = {
     ready: 'Ready to record',
     recording: 'Recording',
-    creatingMp3: 'Creating MP3...',
+    creatingMp3: 'Creating {fmt}...',
+    downloadMp3: 'Download {fmt}',
     start: 'Start recording',
     stop: 'Stop recording',
     micPermissionNote: 'Your microphone stays private and local.',
     recordingUnsupported: 'This browser cannot record audio. Try a current version of Chrome, Edge, Safari, or Firefox.',
     microphoneDenied: 'Microphone access was not granted. Check your browser permissions and try again.',
-    recordingFailed: 'The recording could not be converted to MP3.'
+    recordingFailed: 'The recording could not be converted to {fmt}.'
     ,filenameLabel: 'FILENAME'
+    ,recorderLede: 'Record from your microphone and download a clean {fmt}. Everything stays in this browser.'
   };
 
   function text(key) {
     return languageText?.[key] || fallbackText[key];
   }
 
-  function normalizeFilename(value, fallback) {
+  function tr(key) {
+    return text(key).replaceAll('{fmt}', RECORD_FORMAT_LABELS[recordFormat]);
+  }
+
+  function applyRecordFormatCopy() {
+    formatTabs.forEach(tab => {
+      const isActive = tab.dataset.format === recordFormat;
+      tab.classList.toggle('active', isActive);
+      tab.setAttribute('aria-selected', String(isActive));
+    });
+    if (ledeEl) ledeEl.textContent = tr('recorderLede');
+  }
+
+  formatTabs.forEach(tab => tab.addEventListener('click', () => {
+    if (mediaRecorder?.state === 'recording') return;
+    const nextFormat = tab.dataset.format;
+    if (nextFormat === recordFormat || !RECORD_FORMAT_LABELS[nextFormat]) return;
+    recordFormat = nextFormat;
+    localStorage.setItem('wavecraft-recorder-format', recordFormat);
+    applyRecordFormatCopy();
+  }));
+
+  applyRecordFormatCopy();
+
+  function normalizeFilename(value, fallback, extension) {
     const cleaned = value.replace(/[<>:"/\\|?*\u0000-\u001F]/g, '').trim();
     if (!cleaned) return fallback;
-    return cleaned.toLowerCase().endsWith('.mp3') ? cleaned : `${cleaned}.mp3`;
+    return cleaned.toLowerCase().endsWith(extension) ? cleaned : `${cleaned}${extension}`;
   }
 
   function openRecorderDatabase() {
@@ -160,6 +194,9 @@
   }
 
   function appendRecording(recording, persist = true) {
+    const format = recording.format || (recording.name.toLowerCase().endsWith('.wav') ? 'wav' : 'mp3');
+    const extension = `.${RECORD_FORMAT_EXT[format]}`;
+    const downloadLabel = text('downloadMp3').replaceAll('{fmt}', RECORD_FORMAT_LABELS[format]);
     const downloadUrl = URL.createObjectURL(recording.data);
     const resultItem = document.createElement('div');
     resultItem.className = 'recording-result';
@@ -193,7 +230,7 @@
     downloadLink.className = 'download-button';
     downloadLink.href = downloadUrl;
     downloadLink.download = recording.name;
-    downloadLink.innerHTML = `<span>${text('downloadMp3')}</span><span aria-hidden="true">↓</span>`;
+    downloadLink.innerHTML = `<span>${downloadLabel}</span><span aria-hidden="true">↓</span>`;
     resultHeading.append(filenameField, downloadLink);
     editFilenameButton.addEventListener('click', () => {
       filenameDisplay.hidden = true;
@@ -202,10 +239,10 @@
       filenameInput.select();
     });
     filenameInput.addEventListener('input', () => {
-      downloadLink.download = normalizeFilename(filenameInput.value, recording.name);
+      downloadLink.download = normalizeFilename(filenameInput.value, recording.name, extension);
     });
     filenameInput.addEventListener('blur', () => {
-      filenameInput.value = normalizeFilename(filenameInput.value, recording.name);
+      filenameInput.value = normalizeFilename(filenameInput.value, recording.name, extension);
       recording.name = filenameInput.value;
       downloadLink.download = recording.name;
       filenameText.textContent = recording.name;
@@ -224,7 +261,7 @@
     if (persist) saveRecording(recording).catch(error => console.warn('Could not save recording', error));
   }
 
-  async function convertToMp3(blob) {
+  async function convertRecording(blob, format) {
     if (typeof FFmpeg === 'undefined') throw new Error('FFmpeg is unavailable');
     const { createFFmpeg, fetchFile } = FFmpeg;
     const ffmpeg = createFFmpeg({
@@ -233,17 +270,22 @@
       corePath: 'https://unpkg.com/@ffmpeg/core-st@0.11.1/dist/ffmpeg-core.js'
     });
     await ffmpeg.load();
+    const outputName = `voice-output.${RECORD_FORMAT_EXT[format]}`;
     ffmpeg.FS('writeFile', 'voice-input', await fetchFile(blob));
-    await ffmpeg.run('-y', '-i', 'voice-input', '-vn', '-codec:a', 'libmp3lame', '-b:a', '128k', 'voice-output.mp3');
-    const data = ffmpeg.FS('readFile', 'voice-output.mp3');
+    if (format === 'wav') {
+      await ffmpeg.run('-y', '-i', 'voice-input', '-vn', '-codec:a', 'pcm_s16le', outputName);
+    } else {
+      await ffmpeg.run('-y', '-i', 'voice-input', '-vn', '-codec:a', 'libmp3lame', '-b:a', '128k', outputName);
+    }
+    const data = ffmpeg.FS('readFile', outputName);
     try {
       ffmpeg.FS('unlink', 'voice-input');
-      ffmpeg.FS('unlink', 'voice-output.mp3');
+      ffmpeg.FS('unlink', outputName);
       if (ffmpeg.isLoaded()) ffmpeg.exit();
     } catch (error) {
       // ignore cleanup errors
     }
-    return new Blob([data], { type: 'audio/mpeg' });
+    return new Blob([data], { type: RECORD_FORMAT_MIME[format] });
   }
 
   function stopTracks() {
@@ -259,8 +301,8 @@
     mediaRecorder.stop();
     stopTracks();
     recordButton.disabled = true;
-    recordState.textContent = text('creatingMp3');
-    recordButtonLabel.textContent = text('creatingMp3');
+    recordState.textContent = tr('creatingMp3');
+    recordButtonLabel.textContent = tr('creatingMp3');
     recorderStage.classList.remove('is-recording');
     setStatus(text('micPermissionNote'));
   }
@@ -278,29 +320,32 @@
       mediaRecorder.addEventListener('dataavailable', event => {
         if (event.data.size) recordingChunks.push(event.data);
       });
+      const formatAtRecordTime = recordFormat;
       mediaRecorder.addEventListener('stop', async () => {
         try {
           const sourceBlob = new Blob(recordingChunks, { type: mediaRecorder.mimeType || 'audio/webm' });
-          const mp3Blob = await convertToMp3(sourceBlob);
+          const outputBlob = await convertRecording(sourceBlob, formatAtRecordTime);
           const stamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-          const filename = `voice-recording-${stamp}.mp3`;
-          appendRecording({ id: crypto.randomUUID(), name: filename, data: mp3Blob });
+          const filename = `voice-recording-${stamp}.${RECORD_FORMAT_EXT[formatAtRecordTime]}`;
+          appendRecording({ id: crypto.randomUUID(), name: filename, data: outputBlob, format: formatAtRecordTime });
           recordState.textContent = text('ready');
           recordButtonLabel.textContent = text('start');
           setStatus(text('micPermissionNote'));
         } catch (error) {
-          console.error('Could not create MP3 recording', error);
+          console.error('Could not create recording', error);
           recordState.textContent = text('ready');
           recordButtonLabel.textContent = text('start');
-          setStatus(text('recordingFailed'));
+          setStatus(tr('recordingFailed'));
         } finally {
           // Always clear chunks to free memory, regardless of success or failure.
           recordingChunks = [];
           recordButton.disabled = false;
+          formatTabs.forEach(tab => { tab.disabled = false; });
         }
       }, { once: true });
       mediaRecorder.start();
       startLevelMeter();
+      formatTabs.forEach(tab => { tab.disabled = true; });
       recordingStartedAt = performance.now();
       recordTime.textContent = '00:00';
       recordState.textContent = text('recording');
@@ -325,6 +370,7 @@
       recordState.textContent = text('ready');
       recordButtonLabel.textContent = text('start');
     }
+    applyRecordFormatCopy();
   });
 
   if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {

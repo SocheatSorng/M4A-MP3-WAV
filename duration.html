@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="glass">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -12,21 +12,26 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
-  <script>try{if(localStorage.getItem("theme")==="glass"){document.documentElement.setAttribute("data-theme","glass");}}catch(e){}</script>
   <script defer src="language.js"></script>
-  <script defer src="theme.js"></script>
 </head>
 <body>
   <main class="converter-page duration-page">
     <nav class="app-nav" aria-label="Audio tools navigation" data-i18n-aria-label="audioToolsNavigation">
       <button class="nav-menu-button" type="button" aria-expanded="false" aria-controls="site-nav-links" aria-label="Open navigation" data-i18n-aria-label="openNavigation"><span></span><span></span><span></span></button>
-      <div class="nav-links" id="site-nav-links"><a class="nav-link" href="index.html" data-i18n="converter">Converter</a><a class="nav-link active" href="duration.html" data-i18n="durationCalculator">Duration calculator</a><a class="nav-link" href="recorder.html" data-i18n="voiceRecorder">Voice recorder</a><a class="nav-link" href="ios-guide.html" data-i18n="iosGuideNavigation">Guide page</a><button class="lang-toggle" type="button" aria-label="Toggle language" data-i18n-aria-label="toggleLanguage" aria-pressed="false"><span data-lang="en">EN</span><span>/</span><span data-lang="kh">KH</span></button><button class="theme-toggle" type="button" aria-label="Toggle glass theme" data-i18n-aria-label="toggleGlassTheme" aria-pressed="false"><span class="theme-toggle-icon" aria-hidden="true">◐</span><span data-i18n="glassTheme">GLASS</span></button></div>
+      <div class="nav-links" id="site-nav-links"><a class="nav-link" href="index.html" data-i18n="converter">Converter</a><a class="nav-link active" href="duration.html" data-i18n="durationCalculator">Duration calculator</a><a class="nav-link" href="recorder.html" data-i18n="voiceRecorder">Voice recorder</a><a class="nav-link" href="ios-guide.html" data-i18n="iosGuideNavigation">Guide page</a><button class="lang-toggle" type="button" aria-label="Toggle language" data-i18n-aria-label="toggleLanguage" aria-pressed="false"><span data-lang="en">EN</span><span>/</span><span data-lang="kh">KH</span></button></div>
     </nav>
 
     <section class="duration-hero">
       <h1 data-i18n="durationTitle">Measure your audio library.</h1>
       <p class="intro" data-i18n="durationLede">Scan a folder to calculate the total duration of every WAV recording, including files in nested folders.</p>
     </section>
+
+    <div class="format-switcher" role="tablist" aria-label="File type to measure">
+      <span class="format-switcher-label" data-i18n="measureLabel">Measure:</span>
+      <button class="format-tab active" type="button" role="tab" aria-selected="true" data-format="wav">WAV</button>
+      <button class="format-tab" type="button" role="tab" aria-selected="false" data-format="mp3">MP3</button>
+      <button class="format-tab" type="button" role="tab" aria-selected="false" data-format="m4a">M4A</button>
+    </div>
 
     <section class="picker" aria-label="Choose a folder" data-i18n-aria-label="chooseFolderRegion">
       <div class="picker-copy">
@@ -93,13 +98,69 @@
     const convertAllButton = document.querySelector('#convert-all-button');
     const nonWavCountEl = document.querySelector('#non-wav-count');
     const nonWavList = document.querySelector('#non-wav-list');
+    const formatTabs = [...document.querySelectorAll('.format-tab')];
+    const introEl = document.querySelector('[data-i18n="durationLede"]');
+    const dropNoteEl = document.querySelector('[data-i18n="dropWavFiles"]');
+    const successLabelEl = document.querySelector('[data-i18n="successfulWav"]');
     let scannedResults = [];
     let durationTranslations;
     let selectedFolderName = 'Selected folder';
+    let lastStatusKind = 'waiting';
     const durationDatabaseName = 'wavecraft-duration-ledger';
     const durationStoreName = 'duration-ledger';
     const converterQueueDatabaseName = 'wavecraft-converter-queue';
     const converterQueueStoreName = 'files';
+
+    const FORMAT_LABELS = { wav: 'WAV', mp3: 'MP3', m4a: 'M4A' };
+    const FORMAT_EXT = { wav: '.wav', mp3: '.mp3', m4a: '.m4a' };
+    const FORMAT_ACCEPT = { wav: '.wav,audio/wav', mp3: '.mp3,audio/mpeg', m4a: '.m4a,audio/mp4,audio/x-m4a' };
+    let activeFormat = localStorage.getItem('wavecraft-duration-format');
+    if (!FORMAT_LABELS[activeFormat]) activeFormat = 'wav';
+
+    function fmtLabel() { return FORMAT_LABELS[activeFormat]; }
+
+    function tr(key, fallback) {
+      const template = (durationTranslations && durationTranslations[key]) || fallback;
+      return template.replaceAll('{fmt}', fmtLabel());
+    }
+
+    function applyFormatCopy() {
+      fileInput.accept = FORMAT_ACCEPT[activeFormat];
+      formatTabs.forEach(tab => {
+        const isActive = tab.dataset.format === activeFormat;
+        tab.classList.toggle('active', isActive);
+        tab.setAttribute('aria-selected', String(isActive));
+      });
+      if (introEl) introEl.textContent = tr('durationLede', 'Scan a folder to calculate the total duration of every {fmt} recording, including files in nested folders.');
+      if (dropNoteEl) dropNoteEl.textContent = tr('dropWavFiles', 'Drop {fmt} files here');
+      if (successLabelEl) successLabelEl.textContent = tr('successfulWav', 'Successful {fmt} files');
+      empty.textContent = tr('emptyLedger', 'Choose a folder to see its {fmt} files here.');
+      nonWavPanel.setAttribute('aria-label', tr('nonWavFiles', 'Non-{fmt} files'));
+      if (lastStatusKind === 'waiting') status.textContent = tr('waitingFolder', 'Waiting for a folder.');
+      if (lastStatusKind === 'noFilesFound') status.textContent = tr('noWavFound', 'No {fmt} files found in that folder.');
+      if (lastStatusKind === 'scanComplete') status.textContent = tr('scanComplete', 'Scan complete. All {fmt} files were read locally.');
+    }
+
+    formatTabs.forEach(tab => tab.addEventListener('click', () => {
+      const nextFormat = tab.dataset.format;
+      if (nextFormat === activeFormat || !FORMAT_LABELS[nextFormat]) return;
+      activeFormat = nextFormat;
+      localStorage.setItem('wavecraft-duration-format', activeFormat);
+      scannedResults = [];
+      rows.replaceChildren();
+      results.hidden = true;
+      empty.hidden = false;
+      progressWrap.style.display = 'none';
+      nonWavPanel.hidden = true;
+      exportButton.disabled = true;
+      resetSummary();
+      lastStatusKind = 'waiting';
+      resultCount.textContent = tr('noFilesScanned', 'No files scanned');
+      applyFormatCopy();
+      restoreDurationLedger().catch(error => console.warn('Could not restore duration ledger', error));
+    }));
+
+    applyFormatCopy();
 
     function openDurationDatabase() {
       return new Promise((resolve, reject) => {
@@ -116,7 +177,7 @@
       const database = await openDurationDatabase();
       await new Promise((resolve, reject) => {
         const transaction = database.transaction(durationStoreName, 'readwrite');
-        transaction.objectStore(durationStoreName).put(snapshot, 'latest');
+        transaction.objectStore(durationStoreName).put(snapshot, activeFormat);
         transaction.oncomplete = resolve;
         transaction.onerror = () => reject(transaction.error);
       });
@@ -126,12 +187,13 @@
     async function restoreDurationLedger() {
       const database = await openDurationDatabase();
       const snapshot = await new Promise((resolve, reject) => {
-        const request = database.transaction(durationStoreName).objectStore(durationStoreName).get('latest');
+        const request = database.transaction(durationStoreName).objectStore(durationStoreName).get(activeFormat);
         request.onsuccess = () => resolve(request.result);
         request.onerror = () => reject(request.error);
       });
       database.close();
       if (snapshot) renderStoredLedger(snapshot);
+      else empty.textContent = tr('emptyLedger', 'Choose a folder to see its {fmt} files here.');
     }
 
     function deleteDatabase(databaseName) {
@@ -189,15 +251,17 @@
       updateSummary(totalSeconds, successes, failedCount, shortestSeconds, snapshot.longestSeconds || 0, totalSize);
       renderNonWavFiles(nonWavFiles);
       if (successes) appendTotalRow(totalSeconds);
-      status.textContent = durationTranslations ? `${durationTranslations.restored} ${successes} ${durationTranslations.wavFile} ${successes === 1 ? durationTranslations.result : durationTranslations.results} ${durationTranslations.fromBrowser}.` : `Restored ${successes} readable WAV result${successes === 1 ? '' : 's'} from this browser.`;
-      resultCount.textContent = durationTranslations ? `${successes} ${durationTranslations.readableOf} ${snapshot.fileCount || successes} ${durationTranslations.wavFile}` : `${successes} readable of ${snapshot.fileCount || successes} WAV file${(snapshot.fileCount || successes) === 1 ? '' : 's'}`;
+      status.textContent = `${tr('restored', 'Restored')} ${successes} ${tr('formatFileWord', '{fmt} file')} ${successes === 1 ? tr('result', 'result') : tr('results', 'results')} ${tr('fromBrowser', 'from this browser')}.`;
+      lastStatusKind = 'dynamic';
+      resultCount.textContent = `${successes} ${tr('readableOf', 'readable of')} ${snapshot.fileCount || successes} ${tr('formatFileWord', '{fmt} file')}`;
       exportButton.disabled = scannedResults.length === 0;
     }
 
     const isAppleMobile = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
     chooseFolderButton.addEventListener('click', async () => {
       if (isAppleMobile) {
-        status.textContent = durationTranslations?.selectWavFilesFromFiles || 'Select one or more WAV files from the Files app.';
+        status.textContent = tr('selectWavFilesFromFiles', 'Select one or more {fmt} files from the Files app.');
+        lastStatusKind = 'dynamic';
         fileInput.click();
         return;
       }
@@ -224,7 +288,7 @@
     nonWavToggle.addEventListener('click', () => {
       const expanded = nonWavToggle.getAttribute('aria-expanded') === 'true';
       nonWavToggle.setAttribute('aria-expanded', String(!expanded));
-      nonWavToggle.firstChild.textContent = `${expanded ? (durationTranslations?.hideNonWav || 'Hide non-WAV files') : (durationTranslations?.showNonWav || 'Show non-WAV files')} (`;
+      nonWavToggle.firstChild.textContent = `${expanded ? tr('hideNonWav', 'Hide non-{fmt} files') : tr('showNonWav', 'Show non-{fmt} files')} (`;
       nonWavList.hidden = expanded;
     });
     clearAllSavedDataOnReload()
@@ -232,35 +296,38 @@
       .catch(error => console.warn('Could not initialize duration ledger', error));
 
     async function scanFiles(files) {
-      const wavFiles = files.filter(file => file.name.toLowerCase().endsWith('.wav'));
-      const nonWavFiles = files.filter(file => !file.name.toLowerCase().endsWith('.wav'));
-      selectedFolderName = getSelectedFolderName(wavFiles) || 'Selected folder';
+      const ext = FORMAT_EXT[activeFormat];
+      const matchingFiles = files.filter(file => file.name.toLowerCase().endsWith(ext));
+      const otherFiles = files.filter(file => !file.name.toLowerCase().endsWith(ext));
+      selectedFolderName = getSelectedFolderName(matchingFiles) || 'Selected folder';
       scannedResults = [];
       exportButton.disabled = true;
       rows.replaceChildren();
-      empty.hidden = wavFiles.length > 0;
-      results.hidden = wavFiles.length === 0;
-      progressWrap.style.display = wavFiles.length ? 'block' : 'none';
+      empty.hidden = matchingFiles.length > 0;
+      results.hidden = matchingFiles.length === 0;
+      progressWrap.style.display = matchingFiles.length ? 'block' : 'none';
       progress.style.width = '0%';
       resetSummary();
-      renderNonWavFiles(nonWavFiles);
+      renderNonWavFiles(otherFiles);
 
-      if (!wavFiles.length) {
-        status.textContent = durationTranslations?.noWavFound || 'No WAV files found in that folder.';
-        resultCount.textContent = durationTranslations?.noFilesScanned || 'No files scanned';
+      if (!matchingFiles.length) {
+        status.textContent = tr('noWavFound', 'No {fmt} files found in that folder.');
+        lastStatusKind = 'noFilesFound';
+        resultCount.textContent = tr('noFilesScanned', 'No files scanned');
         return;
       }
 
       let totalSeconds = 0;
-      let totalSize = wavFiles.reduce((sum, file) => sum + file.size, 0);
+      let totalSize = matchingFiles.reduce((sum, file) => sum + file.size, 0);
       let completed = 0;
       let successes = 0;
-      let failedWavCount = 0;
+      let failedCount = 0;
       let longest = { seconds: 0, name: '' };
       let shortest = { seconds: Infinity, name: '' };
-      status.textContent = durationTranslations ? `${durationTranslations.reading} ${wavFiles.length} ${durationTranslations.wavFile}...` : `Reading ${wavFiles.length} WAV file${wavFiles.length === 1 ? '' : 's'}...`;
+      status.textContent = `${tr('reading', 'Reading...')} ${matchingFiles.length} ${tr('formatFileWord', '{fmt} file')}...`;
+      lastStatusKind = 'dynamic';
 
-      for (const file of wavFiles) {
+      for (const file of matchingFiles) {
         const row = document.createElement('tr');
         const nameCell = document.createElement('td');
         const name = document.createElement('div');
@@ -277,7 +344,7 @@
         rows.append(row);
 
         try {
-          const seconds = await readWavDuration(file);
+          const seconds = await readAudioDuration(file, activeFormat);
           durationCell.textContent = formatDuration(seconds);
           totalSeconds += seconds;
           successes++;
@@ -287,19 +354,25 @@
         } catch (error) {
           durationCell.textContent = durationTranslations?.couldNotRead || 'Could not read';
           durationCell.className = 'error';
-          failedWavCount++;
+          failedCount++;
           scannedResults.push({ code: file.name, size: file.size, seconds: null, minutes: null, by: '', location: getFolder(file.webkitRelativePath) || selectedFolderName });
         }
         completed++;
-        progress.style.width = `${Math.round(completed / wavFiles.length * 100)}%`;
-        updateSummary(totalSeconds, successes, failedWavCount + nonWavFiles.length, shortest.seconds === Infinity ? 0 : shortest.seconds, longest.seconds, totalSize);
+        progress.style.width = `${Math.round(completed / matchingFiles.length * 100)}%`;
+        updateSummary(totalSeconds, successes, failedCount + otherFiles.length, shortest.seconds === Infinity ? 0 : shortest.seconds, longest.seconds, totalSize);
       }
 
       if (scannedResults.length) appendTotalRow(totalSeconds);
-      status.textContent = failedWavCount ? `${failedWavCount} ${durationTranslations?.unreadable || 'unreadable file'}${failedWavCount === 1 ? '' : 's'}.` : (durationTranslations?.scanComplete || 'Scan complete. All WAV files were read locally.');
-      resultCount.textContent = durationTranslations ? `${successes} ${durationTranslations.readableOf} ${wavFiles.length} ${durationTranslations.wavFile}` : `${successes} readable of ${wavFiles.length} WAV file${wavFiles.length === 1 ? '' : 's'}`;
+      if (failedCount) {
+        status.textContent = `${failedCount} ${tr('unreadable', 'unreadable file')}${failedCount === 1 ? '' : 's'}.`;
+        lastStatusKind = 'dynamic';
+      } else {
+        status.textContent = tr('scanComplete', 'Scan complete. All {fmt} files were read locally.');
+        lastStatusKind = 'scanComplete';
+      }
+      resultCount.textContent = `${successes} ${tr('readableOf', 'readable of')} ${matchingFiles.length} ${tr('formatFileWord', '{fmt} file')}`;
       exportButton.disabled = scannedResults.length === 0;
-      await saveDurationLedger({ results: scannedResults, totalSeconds, totalSize, shortestSeconds: shortest.seconds === Infinity ? 0 : shortest.seconds, longestSeconds: longest.seconds, fileCount: wavFiles.length, failedCount: failedWavCount + nonWavFiles.length, nonWavFiles: nonWavFiles.map(file => file.webkitRelativePath || file.name), folderName: selectedFolderName });
+      await saveDurationLedger({ results: scannedResults, totalSeconds, totalSize, shortestSeconds: shortest.seconds === Infinity ? 0 : shortest.seconds, longestSeconds: longest.seconds, fileCount: matchingFiles.length, failedCount: failedCount + otherFiles.length, nonWavFiles: otherFiles.map(file => file.webkitRelativePath || file.name), folderName: selectedFolderName });
     }
 
     function exportCsv() {
@@ -313,10 +386,11 @@
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = 'wav-duration-report.csv';
+      link.download = `${activeFormat}-duration-report.csv`;
       link.click();
       URL.revokeObjectURL(url);
-      status.textContent = durationTranslations ? `${durationTranslations.exported} ${scannedResults.length} ${durationTranslations.wavFile}.` : `Exported ${scannedResults.length} WAV file${scannedResults.length === 1 ? '' : 's'}.`;
+      status.textContent = `${tr('exported', 'Exported')} ${scannedResults.length} ${tr('formatFileWord', '{fmt} file')}.`;
+      lastStatusKind = 'dynamic';
     }
 
     function csvCell(value) {
@@ -371,6 +445,11 @@
 
     function formatDecimalHours(seconds) {
       return (seconds / 3600).toFixed(6);
+    }
+
+    async function readAudioDuration(file, format) {
+      if (format === 'wav') return readWavDuration(file);
+      return decodeAudioDuration(file);
     }
 
     async function readWavDuration(file) {
@@ -477,7 +556,7 @@
       }));
       nonWavList.hidden = true;
       nonWavToggle.setAttribute('aria-expanded', 'false');
-      nonWavToggle.firstChild.textContent = `${durationTranslations?.showNonWav || 'Show non-WAV files'} (`;
+      nonWavToggle.firstChild.textContent = `${tr('showNonWav', 'Show non-{fmt} files')} (`;
     }
 
     window.addEventListener('wavecraft:language', event => {
@@ -486,12 +565,10 @@
     });
 
     function updateDurationLanguage(translations) {
+      applyFormatCopy();
       const expanded = nonWavToggle.getAttribute('aria-expanded') === 'true';
-      nonWavToggle.firstChild.textContent = `${expanded ? translations.hideNonWav : translations.showNonWav} (`;
+      nonWavToggle.firstChild.textContent = `${expanded ? tr('hideNonWav', 'Hide non-{fmt} files') : tr('showNonWav', 'Show non-{fmt} files')} (`;
       if (!convertAllButton.hidden) convertAllButton.textContent = `${translations.convertAll} ${nonWavCountEl.textContent} ${translations.toWav}`;
-      if (status.textContent === 'Scan complete. All WAV files were read locally.') status.textContent = translations.scanComplete;
-      if (status.textContent === 'Waiting for a folder.') status.textContent = translations.waitingFolder;
-      if (status.textContent === 'No WAV files found in that folder.') status.textContent = translations.noWavFound;
       if (resultCount.textContent === 'No files scanned') resultCount.textContent = translations.noFilesScanned;
     }
 
